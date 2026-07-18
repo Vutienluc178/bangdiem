@@ -176,6 +176,7 @@ function ensureClassShape(c){
   if(!c.subjectComments) c.subjectComments = {};
   if(!c.studentNotes) c.studentNotes = {};
   if(!c.goals) c.goals = {};
+  c.subjects.forEach(s=>{ if(s.teacher===undefined) s.teacher = ''; });
   return c;
 }
 
@@ -710,7 +711,111 @@ function generateParentMessage(cls, student, mode){
   const comment = getComment(cls, student, eff.effectiveMode);
   const dtbText = eff.overall.dtb===null ? 'chưa có đủ dữ liệu' : eff.overall.dtb.toFixed(1);
   const labelText = CLASSIFY_LABEL[eff.label];
-  return `Kính gửi quý phụ huynh em ${student.name} (lớp ${cls.name}).\nKết quả học tập ${periodLabel}: điểm trung bình ${dtbText} - xếp loại ${labelText}.\n${comment}\nRất mong quý phụ huynh quan tâm, phối hợp cùng nhà trường trong việc giáo dục các em.\nTrân trọng, GVCN.`;
+  const subjLines = cls.subjects.map(sub=>{
+    const tb = eff.subjAvgs[sub.id];
+    return '- '+sub.name+': '+((tb===null||tb===undefined) ? 'chưa có điểm' : tb.toFixed(1));
+  }).join('\n');
+  return `Kính gửi quý phụ huynh em ${student.name} (lớp ${cls.name}).\nĐiểm trung bình từng môn (tính đến thời điểm hiện tại - ${periodLabel}):\n${subjLines}\nĐiểm trung bình chung: ${dtbText} - xếp loại ${labelText}.\n${comment}\nRất mong quý phụ huynh quan tâm, phối hợp cùng nhà trường trong việc giáo dục các em.\nTrân trọng, GVCN.`;
+}
+
+/* ===================== TIN NHẮN THEO GIÁO VIÊN BỘ MÔN (KHI CÓ ĐIỂM) ===================== */
+// Trả về TB môn hiện có tính đến thời điểm hiện tại theo mode đã chọn.
+// Nếu chọn "Cả năm" nhưng chưa đủ dữ liệu 2 học kỳ, tự dùng tạm HK II rồi đến HK I (nếu có).
+function getSubjectAverageForMode(cls, studentId, subjectId, mode){
+  const e1 = cls.scores?.[studentId]?.[subjectId]?.hk1;
+  const e2 = cls.scores?.[studentId]?.[subjectId]?.hk2;
+  const tb1 = calcTBMonHK(e1), tb2 = calcTBMonHK(e2);
+  if(mode==='hk1') return { tb: tb1, effectiveMode:'hk1' };
+  if(mode==='hk2') return { tb: tb2, effectiveMode:'hk2' };
+  const tbNam = calcTBMonNam(tb1, tb2);
+  if(tbNam!==null) return { tb: tbNam, effectiveMode:'nam' };
+  if(tb2!==null) return { tb: tb2, effectiveMode:'hk2' };
+  if(tb1!==null) return { tb: tb1, effectiveMode:'hk1' };
+  return { tb: null, effectiveMode: mode };
+}
+
+// Chỉ liệt kê học sinh ĐÃ CÓ điểm môn này (tb khác null) ở thời điểm hiện tại.
+function computeSubjectMessageList(cls, subjectId, mode){
+  const results = [];
+  cls.students.forEach(student=>{
+    const { tb, effectiveMode } = getSubjectAverageForMode(cls, student.id, subjectId, mode);
+    if(tb!==null) results.push({ student, tb, effectiveMode });
+  });
+  results.sort((a,b)=>b.tb-a.tb);
+  return results;
+}
+
+function generateSubjectTeacherMessage(cls, student, subjectId, mode){
+  const sub = cls.subjects.find(s=>s.id===subjectId);
+  const { tb, effectiveMode } = getSubjectAverageForMode(cls, student.id, subjectId, mode);
+  const periodLabel = effectiveMode==='hk1' ? 'học kỳ I' : effectiveMode==='hk2' ? 'học kỳ II' : 'cả năm học';
+  const tbText = tb===null ? 'chưa có đủ dữ liệu' : tb.toFixed(1);
+  const teacherText = sub.teacher ? sub.teacher : '(chưa cập nhật tên)';
+  const e1 = cls.scores?.[student.id]?.[subjectId]?.hk1;
+  const e2 = cls.scores?.[student.id]?.[subjectId]?.hk2;
+  const tb1 = calcTBMonHK(e1), tb2 = calcTBMonHK(e2);
+  const trend = (tb1!==null && tb2!==null) ? tb2-tb1 : null;
+  const subjComment = getSubjectComment(cls, student.id, subjectId, effectiveMode, tb, trend);
+  return `Kính gửi quý phụ huynh em ${student.name} (lớp ${cls.name}).\nGiáo viên bộ môn ${sub.name} (${teacherText}) xin thông báo kết quả học tập môn ${sub.name} của em, tính đến thời điểm hiện tại (${periodLabel}): điểm trung bình môn đạt ${tbText}.\n${subjComment}\nRất mong quý phụ huynh quan tâm, nhắc nhở thêm cho em.\nTrân trọng, GV bộ môn ${sub.name}.`;
+}
+
+function openSubjectTeacherMessageModal(cls, student, subjectId, mode){
+  const overlay = document.createElement('div');
+  overlay.className = 'modal-overlay';
+  const sub = cls.subjects.find(s=>s.id===subjectId);
+  const periodLabel = mode==='hk1' ? 'Học kỳ I' : mode==='hk2' ? 'Học kỳ II' : 'Cả năm';
+  const message = generateSubjectTeacherMessage(cls, student, subjectId, mode);
+  overlay.innerHTML = `
+    <div class="modal">
+      <h3>📚 Tin nhắn GV bộ môn ${escapeHtml(sub.name)} — ${escapeHtml(student.name)}</h3>
+      <p class="muted">${periodLabel} · Lớp ${escapeHtml(cls.name)}</p>
+      <div class="field">
+        <label>SĐT phụ huynh</label>
+        <input type="text" id="parentPhoneInput" value="${escapeHtml(student.parentPhone||'')}" placeholder="Chưa có số điện thoại">
+      </div>
+      <div class="field">
+        <label>Nội dung tin nhắn</label>
+        <textarea id="parentMsgBox" style="min-height:140px;">${escapeHtml(message)}</textarea>
+      </div>
+      <div class="modal-actions">
+        <button id="btnClosePM">Đóng</button>
+        <button id="btnSavePhone">Lưu SĐT</button>
+        <button class="primary" id="btnCopyPM">📋 Sao chép tin nhắn</button>
+      </div>
+    </div>`;
+  document.body.appendChild(overlay);
+  overlay.addEventListener('click', e=>{ if(e.target===overlay) overlay.remove(); });
+  overlay.querySelector('#btnClosePM').addEventListener('click', ()=>overlay.remove());
+  overlay.querySelector('#btnSavePhone').addEventListener('click', ()=>{
+    student.parentPhone = overlay.querySelector('#parentPhoneInput').value.trim();
+    saveState();
+    alert('Đã lưu số điện thoại phụ huynh.');
+  });
+  overlay.querySelector('#btnCopyPM').addEventListener('click', ()=>{
+    const text = overlay.querySelector('#parentMsgBox').value;
+    copyTextToClipboard(text, ok=>{
+      alert(ok ? 'Đã sao chép nội dung tin nhắn.' : 'Không thể sao chép tự động, vui lòng bôi đen và sao chép thủ công.');
+    });
+  });
+}
+
+function exportSubjectMessagesExcel(cls, subjectId, mode){
+  const sub = cls.subjects.find(s=>s.id===subjectId);
+  const modeLabel = mode==='hk1'?'Học kỳ I': mode==='hk2'?'Học kỳ II':'Cả năm';
+  const list = computeSubjectMessageList(cls, subjectId, mode);
+  const data = list.map((item,idx)=>({
+    'STT': idx+1,
+    'Họ và tên': item.student.name,
+    'SĐT phụ huynh': item.student.parentPhone||'',
+    'Môn học': sub.name,
+    'Giáo viên bộ môn': sub.teacher||'',
+    'TB môn': item.tb,
+    'Nội dung tin nhắn': generateSubjectTeacherMessage(cls, item.student, subjectId, mode)
+  }));
+  const ws = XLSX.utils.json_to_sheet(data);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'TinNhanGVBoMon');
+  XLSX.writeFile(wb, `TinNhanGVBoMon_${sub.name}_${cls.name}_${modeLabel}.xlsx`);
 }
 
 function copyTextToClipboard(text, onDone){
@@ -1150,21 +1255,50 @@ function renderSubjectsTab(main, cls){
   if(cls.subjects.length===0){
     listEl.innerHTML = `<div class="empty"><div class="big">📘</div>Chưa có môn học nào.</div>`;
   } else {
-    listEl.innerHTML = cls.subjects.map(s=>`
-      <div class="chip" style="font-size:13px;padding:7px 12px;">
-        ${escapeHtml(s.name)} <button data-del-subject="${s.id}" title="Xoá môn">✕</button>
-      </div>`).join('');
+    listEl.innerHTML = '<table><thead><tr><th class="name-cell">Môn học</th><th class="name-cell">Giáo viên bộ môn</th><th style="width:120px;">Thao tác</th></tr></thead><tbody>'+
+      cls.subjects.map(s=>`
+      <tr>
+        <td class="name-cell">${escapeHtml(s.name)}</td>
+        <td class="name-cell">${escapeHtml(s.teacher||'')||'<span class="muted">Chưa có</span>'}</td>
+        <td>
+          <button class="small" data-edit-subject="${s.id}">Sửa</button>
+          <button class="small danger" data-del-subject="${s.id}">Xoá</button>
+        </td>
+      </tr>`).join('')
+      +'</tbody></table>';
   }
 
   document.getElementById('btnAddSubject').addEventListener('click', ()=>{
     openModal({
       title:'Thêm môn học',
-      fields:[{name:'name', label:'Tên môn học', type:'text'}],
+      fields:[
+        {name:'name', label:'Tên môn học', type:'text'},
+        {name:'teacher', label:'Giáo viên bộ môn (tuỳ chọn)', type:'text'}
+      ],
       onSubmit(values){
         if(!values.name || !values.name.trim()) return alert('Vui lòng nhập tên môn');
-        cls.subjects.push({id:uid(), name: values.name.trim()});
+        cls.subjects.push({id:uid(), name: values.name.trim(), teacher: (values.teacher||'').trim()});
         saveState(); renderAll();
       }
+    });
+  });
+
+  listEl.querySelectorAll('[data-edit-subject]').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      const sub = cls.subjects.find(s=>s.id===btn.dataset.editSubject);
+      openModal({
+        title:'Sửa môn học',
+        fields:[
+          {name:'name', label:'Tên môn học', type:'text', value:sub.name},
+          {name:'teacher', label:'Giáo viên bộ môn (tuỳ chọn)', type:'text', value:sub.teacher||''}
+        ],
+        onSubmit(values){
+          if(!values.name || !values.name.trim()) return alert('Vui lòng nhập tên môn');
+          sub.name = values.name.trim();
+          sub.teacher = (values.teacher||'').trim();
+          saveState(); renderAll();
+        }
+      });
     });
   });
 
@@ -1753,6 +1887,7 @@ function printCertificate(cls, studentId, reasonText){
 
 /* ===================== TAB: TIN NHẮN PHỤ HUYNH ===================== */
 let messagesUI = { mode:'nam', onlyWatchlist:false };
+let subjMsgUI = { subjectId:null, mode:'nam' };
 
 function renderMessagesTab(main, cls){
   if(cls.students.length===0){
@@ -1777,6 +1912,22 @@ function renderMessagesTab(main, cls){
     </div>
     <p class="muted">Nội dung tin nhắn được soạn sẵn dựa trên điểm, xếp loại và nhận xét hiện tại. Nhấn "Xem/Sao chép" để sao chép và dán vào Zalo/SMS.</p>
     <div id="msgTableWrap" style="overflow-x:auto;"></div>
+  </div>
+  <div class="card">
+    <div class="row between">
+      <h2>📚 Tin nhắn theo giáo viên bộ môn (khi có điểm)</h2>
+      <div class="row">
+        <select id="subjMsgSubjectSelect"></select>
+        <select id="subjMsgModeSelect">
+          <option value="hk1">Học kỳ I</option>
+          <option value="hk2">Học kỳ II</option>
+          <option value="nam">Cả năm</option>
+        </select>
+        <button id="btnExportSubjMessages">📤 Xuất Excel</button>
+      </div>
+    </div>
+    <p class="muted">Chỉ liệt kê học sinh ĐÃ CÓ điểm môn này tính đến thời điểm hiện tại. Tin nhắn được ký tên giáo viên bộ môn (đặt tên GV ở tab "Môn học").</p>
+    <div id="subjMsgTableWrap" style="overflow-x:auto;"></div>
   </div>`;
 
   document.getElementById('msgModeSelect').value = messagesUI.mode;
@@ -1785,7 +1936,65 @@ function renderMessagesTab(main, cls){
   document.getElementById('msgOnlyWatchlist').addEventListener('change', e=>{ messagesUI.onlyWatchlist = e.target.checked; renderMessagesBody(cls); });
   document.getElementById('btnExportMessages').addEventListener('click', ()=>exportMessagesExcel(cls));
 
+  if(!subjMsgUI.subjectId || !cls.subjects.find(s=>s.id===subjMsgUI.subjectId)){
+    subjMsgUI.subjectId = cls.subjects.length ? cls.subjects[0].id : null;
+  }
+  const subjSelect = document.getElementById('subjMsgSubjectSelect');
+  cls.subjects.forEach(s=>{
+    const opt = document.createElement('option');
+    opt.value = s.id; opt.textContent = s.name + (s.teacher ? ' — '+s.teacher : '');
+    if(s.id===subjMsgUI.subjectId) opt.selected = true;
+    subjSelect.appendChild(opt);
+  });
+  document.getElementById('subjMsgModeSelect').value = subjMsgUI.mode;
+  subjSelect.addEventListener('change', e=>{ subjMsgUI.subjectId = e.target.value; renderSubjectMessagesBody(cls); });
+  document.getElementById('subjMsgModeSelect').addEventListener('change', e=>{ subjMsgUI.mode = e.target.value; renderSubjectMessagesBody(cls); });
+  document.getElementById('btnExportSubjMessages').addEventListener('click', ()=>{
+    if(!subjMsgUI.subjectId) return alert('Chưa có môn học nào.');
+    exportSubjectMessagesExcel(cls, subjMsgUI.subjectId, subjMsgUI.mode);
+  });
+
   renderMessagesBody(cls);
+  renderSubjectMessagesBody(cls);
+}
+
+function renderSubjectMessagesBody(cls){
+  const wrap = document.getElementById('subjMsgTableWrap');
+  if(!subjMsgUI.subjectId){
+    wrap.innerHTML = `<div class="empty">Chưa có môn học nào trong lớp.</div>`;
+    return;
+  }
+  const mode = subjMsgUI.mode;
+  const subjectId = subjMsgUI.subjectId;
+  const sub = cls.subjects.find(s=>s.id===subjectId);
+  const list = computeSubjectMessageList(cls, subjectId, mode);
+
+  if(list.length===0){
+    wrap.innerHTML = `<div class="empty">Chưa có học sinh nào có điểm môn ${escapeHtml(sub.name)} ở giai đoạn này.</div>`;
+    return;
+  }
+
+  let head = '<tr><th style="width:40px;">STT</th><th class="name-cell">Họ và tên</th><th style="width:120px;">SĐT phụ huynh</th><th style="width:70px;">TB môn</th><th class="name-cell" style="min-width:260px;">Xem trước nội dung</th><th style="width:130px;">Thao tác</th></tr>';
+  let body = '';
+  list.forEach((item,idx)=>{
+    const preview = generateSubjectTeacherMessage(cls, item.student, subjectId, mode).replace(/\n/g,' ');
+    body += `<tr>
+      <td>${idx+1}</td>
+      <td class="name-cell">${escapeHtml(item.student.name)}</td>
+      <td>${escapeHtml(item.student.parentPhone||'')||'<span class="muted">Chưa có</span>'}</td>
+      <td><strong>${item.tb.toFixed(1)}</strong></td>
+      <td class="name-cell" style="text-align:left;font-size:12px;">${escapeHtml(preview.slice(0,90))}${preview.length>90?'…':''}</td>
+      <td><button class="small primary" data-subjmsg-view="${item.student.id}">Xem/Sao chép</button></td>
+    </tr>`;
+  });
+
+  wrap.innerHTML = `<table><thead>${head}</thead><tbody>${body}</tbody></table>`;
+  wrap.querySelectorAll('[data-subjmsg-view]').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      const student = cls.students.find(s=>s.id===btn.dataset.subjmsgView);
+      openSubjectTeacherMessageModal(cls, student, subjectId, mode);
+    });
+  });
 }
 
 function renderMessagesBody(cls){
