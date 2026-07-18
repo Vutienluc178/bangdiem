@@ -1,0 +1,2468 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Quản Lý Điểm Học Sinh</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+  :root{
+    --primary:#2563eb; --primary-dark:#1d4ed8; --bg:#f4f6fb; --card:#ffffff;
+    --border:#e2e8f0; --text:#1e293b; --muted:#64748b;
+    --good:#16a34a; --khaC:#2563eb; --dat:#d97706; --bad:#dc2626;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;background:var(--bg);color:var(--text);}
+  header{background:linear-gradient(135deg,var(--primary),var(--primary-dark));color:#fff;padding:16px 24px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;}
+  header h1{font-size:20px;margin:0;font-weight:700;}
+  header .sub{font-size:12px;opacity:.85;margin-top:2px;}
+  .class-bar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+  select, input, textarea, button{font-family:inherit;font-size:14px;}
+  select, input[type=text], input[type=number], input[type=date]{
+    padding:7px 10px;border-radius:8px;border:1px solid var(--border);background:#fff;color:var(--text);
+  }
+  header select{border:1px solid rgba(255,255,255,.4);background:rgba(255,255,255,.15);color:#fff;}
+  header select option{color:#000;}
+  button{cursor:pointer;border-radius:8px;border:1px solid var(--border);background:#fff;padding:8px 14px;font-weight:600;color:var(--text);transition:.15s;}
+  button:hover{filter:brightness(0.97);}
+  button.primary{background:var(--primary);border-color:var(--primary);color:#fff;}
+  button.primary:hover{background:var(--primary-dark);}
+  button.danger{color:var(--bad);border-color:#fecaca;}
+  button.ghost{background:transparent;border-color:transparent;color:#fff;}
+  button.small{padding:4px 9px;font-size:12px;border-radius:6px;}
+  nav.tabs{display:flex;gap:4px;background:#fff;padding:0 24px;border-bottom:1px solid var(--border);overflow-x:auto;}
+  nav.tabs button{border:none;background:transparent;border-radius:0;padding:14px 16px;font-weight:600;color:var(--muted);border-bottom:3px solid transparent;white-space:nowrap;}
+  nav.tabs button.active{color:var(--primary);border-bottom-color:var(--primary);}
+  main{padding:20px 24px;max-width:1400px;margin:0 auto;}
+  .card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:18px;margin-bottom:16px;}
+  .card h2{margin:0 0 12px;font-size:16px;}
+  .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap;}
+  .row.between{justify-content:space-between;}
+  .muted{color:var(--muted);font-size:13px;}
+  table{border-collapse:collapse;width:100%;font-size:13px;}
+  th,td{border:1px solid var(--border);padding:6px 8px;text-align:center;}
+  th{background:#f1f5f9;font-weight:600;}
+  td.name-cell, th.name-cell{text-align:left;min-width:150px;}
+  table input{width:56px;padding:4px;border:1px solid #dbe3ee;border-radius:6px;text-align:center;}
+  table input:focus{outline:2px solid var(--primary);}
+  .tag{display:inline-block;padding:2px 10px;border-radius:999px;font-size:12px;font-weight:700;color:#fff;}
+  .tag.tot{background:var(--good);}
+  .tag.kha{background:var(--khaC);}
+  .tag.dat{background:var(--dat);}
+  .tag.chuadat{background:var(--bad);}
+  .tag.none{background:#94a3b8;}
+  .empty{padding:40px;text-align:center;color:var(--muted);}
+  .empty .big{font-size:40px;margin-bottom:10px;}
+  .list-item{display:flex;align-items:center;justify-content:space-between;padding:9px 12px;border:1px solid var(--border);border-radius:8px;margin-bottom:6px;background:#fafcff;}
+  .list-item.active{border-color:var(--primary);background:#eef4ff;}
+  .list-item .actions{display:flex;gap:6px;}
+  .chip{display:inline-flex;align-items:center;gap:6px;background:#f1f5f9;border-radius:999px;padding:4px 10px;font-size:12px;margin:3px;}
+  .chip button{border:none;background:transparent;padding:0;color:var(--bad);font-weight:800;cursor:pointer;}
+  .modal-overlay{position:fixed;inset:0;background:rgba(15,23,42,.5);display:flex;align-items:center;justify-content:center;z-index:1000;padding:20px;}
+  .modal{background:#fff;border-radius:14px;padding:22px;max-width:640px;width:100%;max-height:88vh;overflow:auto;}
+  .modal h3{margin-top:0;}
+  .field{margin-bottom:12px;}
+  .field label{display:block;font-size:13px;font-weight:600;margin-bottom:5px;color:var(--muted);}
+  .field input, .field select, .field textarea{width:100%;}
+  .field textarea{min-height:80px;resize:vertical;}
+  .modal-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:16px;}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+  .badge-count{display:inline-flex;align-items:center;justify-content:center;min-width:20px;height:20px;padding:0 6px;background:var(--primary);color:#fff;border-radius:999px;font-size:11px;font-weight:700;}
+  .stat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-bottom:6px;}
+  .stat-box{border:1px solid var(--border);border-radius:10px;padding:12px;text-align:center;}
+  .stat-box .num{font-size:24px;font-weight:800;}
+  .stat-box .lbl{font-size:12px;color:var(--muted);margin-top:2px;}
+  footer{text-align:center;color:var(--muted);font-size:12px;padding:24px;}
+  .hint{background:#fffbeb;border:1px solid #fde68a;color:#92400e;border-radius:8px;padding:10px 14px;font-size:13px;margin-bottom:14px;}
+  .link-btn{background:none;border:none;color:var(--primary);text-decoration:underline;font-weight:600;padding:0;cursor:pointer;}
+  #print-area{display:none;}
+  @media print{
+    body *{visibility:hidden;}
+    #print-area, #print-area *{visibility:visible;}
+    #print-area{display:block;position:absolute;top:0;left:0;width:100%;padding:20px;}
+  }
+  ::-webkit-scrollbar{height:8px;width:8px;}
+  ::-webkit-scrollbar-thumb{background:#cbd5e1;border-radius:4px;}
+</style>
+</head>
+<body>
+
+<header>
+  <div>
+    <h1>📊 Quản Lý Điểm Học Sinh</h1>
+    <div class="sub">Nhập điểm · Xếp loại theo Thông tư 22/2021 · Nhận xét tự động</div>
+  </div>
+  <div class="class-bar">
+    <select id="classSelect"></select>
+    <button class="ghost" id="btnNewClass">+ Lớp mới</button>
+    <button class="ghost" id="btnSettings">⚙️ Cài đặt</button>
+  </div>
+</header>
+
+<nav class="tabs" id="tabs">
+  <button data-tab="dashboard" class="active">🏠 Tổng quan</button>
+  <button data-tab="students">👥 Học sinh</button>
+  <button data-tab="subjects">📘 Môn học</button>
+  <button data-tab="scores">✏️ Nhập điểm</button>
+  <button data-tab="summary">📋 Tổng hợp & Xếp loại</button>
+  <button data-tab="yearly">🏁 Tổng kết năm</button>
+  <button data-tab="chart">📈 Biểu đồ</button>
+  <button data-tab="watchlist">⚠️ Cần chú ý</button>
+  <button data-tab="progress">🌟 Tiến bộ/Xuất sắc</button>
+  <button data-tab="messages">✉️ Tin nhắn PH</button>
+  <button data-tab="notes">📝 Ghi chú</button>
+</nav>
+
+<main id="main"></main>
+
+<footer>Dữ liệu được lưu tự động trên trình duyệt này (localStorage). Nên xuất Excel định kỳ để sao lưu.</footer>
+
+<div id="print-area"></div>
+
+<script>
+/* ===================== STATE ===================== */
+const STORAGE_KEY = 'qldhs_data_v2';
+const DEFAULT_SUBJECTS = ["Toán","Ngữ văn","Tiếng Anh","Vật lí","Hóa học","Sinh học","Lịch sử","Địa lí","GDCD","Tin học","Công nghệ","Thể dục","GDQP-AN"];
+
+const DEFAULT_THRESHOLDS = {
+  tot:{dtb:8.0, minMon:6.5},
+  kha:{dtb:6.5, minMon:5.0},
+  dat:{dtb:5.0, minMon:3.5},
+  watch:{weakSubject:3.5, declineDrop:1.0},
+  progress:{riseImprove:1.0, excellentSubject:9.0, nearPromoteGap:0.3}
+};
+
+const DEFAULT_EXAM_LINKS = {
+  chung: 'https://drive.google.com/drive/folders/1e9wqJyLc58sg1ydKFlOF7OhkVbf4gvo8?usp=sharing',
+  lop10: '',
+  lop11: '',
+  lop12: ''
+};
+
+function uid(){ return 'id'+Date.now().toString(36)+Math.random().toString(36).slice(2,8); }
+
+function loadState(){
+  try{
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if(raw){
+      const s = JSON.parse(raw);
+      if(!s.thresholds) s.thresholds = JSON.parse(JSON.stringify(DEFAULT_THRESHOLDS));
+      if(!s.thresholds.watch) s.thresholds.watch = JSON.parse(JSON.stringify(DEFAULT_THRESHOLDS.watch));
+      if(!s.thresholds.progress) s.thresholds.progress = JSON.parse(JSON.stringify(DEFAULT_THRESHOLDS.progress));
+      if(s.gsheetUrl===undefined) s.gsheetUrl = '';
+      if(!s.examLinks) s.examLinks = JSON.parse(JSON.stringify(DEFAULT_EXAM_LINKS));
+      return s;
+    }
+  }catch(e){ console.warn('Không đọc được dữ liệu cũ', e); }
+  return { classes: [], currentClassId: null, thresholds: JSON.parse(JSON.stringify(DEFAULT_THRESHOLDS)), gsheetUrl: '', examLinks: JSON.parse(JSON.stringify(DEFAULT_EXAM_LINKS)) };
+}
+
+let state = loadState();
+
+function saveState(){
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+}
+
+function getCurrentClass(){
+  return state.classes.find(c=>c.id===state.currentClassId) || null;
+}
+
+function ensureClassShape(c){
+  if(!c.subjects) c.subjects = [];
+  if(!c.students) c.students = [];
+  if(!c.scores) c.scores = {};
+  if(!c.colCounts) c.colCounts = {};
+  if(!c.customComments) c.customComments = {};
+  if(!c.subjectComments) c.subjectComments = {};
+  if(!c.studentNotes) c.studentNotes = {};
+  if(!c.goals) c.goals = {};
+  return c;
+}
+
+/* ===================== SCORE HELPERS ===================== */
+function roundVN(x){
+  if(x===null||x===undefined||isNaN(x)) return null;
+  return Math.round(x*10)/10;
+}
+
+function colKey(subjectId, semester){ return subjectId+'_'+semester; }
+
+function getColCounts(cls, subjectId, semester){
+  const key = colKey(subjectId, semester);
+  if(!cls.colCounts[key]) cls.colCounts[key] = { tx:2, gk:2 };
+  return cls.colCounts[key];
+}
+
+function getScoreEntry(cls, studentId, subjectId, semester){
+  if(!cls.scores[studentId]) cls.scores[studentId] = {};
+  if(!cls.scores[studentId][subjectId]) cls.scores[studentId][subjectId] = {};
+  if(!cls.scores[studentId][subjectId][semester]) cls.scores[studentId][subjectId][semester] = { tx:[], gk:[], ck:[] };
+  return cls.scores[studentId][subjectId][semester];
+}
+
+// Tính điểm trung bình môn 1 học kỳ: hệ số tx=1, gk=2, ck=3
+function calcTBMonHK(entry){
+  if(!entry) return null;
+  let sum=0, weight=0;
+  (entry.tx||[]).forEach(v=>{ if(v!==null && v!==undefined && v!==''){ sum+=Number(v)*1; weight+=1; } });
+  (entry.gk||[]).forEach(v=>{ if(v!==null && v!==undefined && v!==''){ sum+=Number(v)*2; weight+=2; } });
+  (entry.ck||[]).forEach(v=>{ if(v!==null && v!==undefined && v!==''){ sum+=Number(v)*3; weight+=3; } });
+  if(weight===0) return null;
+  return roundVN(sum/weight);
+}
+
+function calcTBMonNam(tbHK1, tbHK2){
+  if(tbHK1===null || tbHK2===null) return null;
+  return roundVN((tbHK1 + tbHK2*2)/3);
+}
+
+// Tính bảng TB môn cho 1 học sinh theo mode: 'hk1' | 'hk2' | 'nam'
+function getStudentSubjectAverages(cls, studentId, mode){
+  const result = {}; // subjectId -> tb
+  cls.subjects.forEach(sub=>{
+    const e1 = cls.scores?.[studentId]?.[sub.id]?.hk1;
+    const e2 = cls.scores?.[studentId]?.[sub.id]?.hk2;
+    const tb1 = calcTBMonHK(e1);
+    const tb2 = calcTBMonHK(e2);
+    if(mode==='hk1') result[sub.id]=tb1;
+    else if(mode==='hk2') result[sub.id]=tb2;
+    else result[sub.id]=calcTBMonNam(tb1,tb2);
+  });
+  return result;
+}
+
+function calcOverall(subjectAverages){
+  const vals = Object.values(subjectAverages).filter(v=>v!==null && v!==undefined);
+  if(vals.length===0) return { dtb:null, min:null, count:0 };
+  const dtb = roundVN(vals.reduce((a,b)=>a+b,0)/vals.length);
+  const min = Math.min(...vals);
+  return { dtb, min, count: vals.length };
+}
+
+function classify(overall, thresholds){
+  if(overall.dtb===null || overall.count===0) return 'none';
+  const t = thresholds || DEFAULT_THRESHOLDS;
+  if(overall.dtb>=t.tot.dtb && overall.min>=t.tot.minMon) return 'tot';
+  if(overall.dtb>=t.kha.dtb && overall.min>=t.kha.minMon) return 'kha';
+  if(overall.dtb>=t.dat.dtb && overall.min>=t.dat.minMon) return 'dat';
+  return 'chuadat';
+}
+
+const CLASSIFY_LABEL = { tot:'Tốt', kha:'Khá', dat:'Đạt', chuadat:'Chưa đạt', none:'Chưa có điểm' };
+const CLASSIFY_CLASS = { tot:'tot', kha:'kha', dat:'dat', chuadat:'chuadat', none:'none' };
+
+// Xếp loại theo mode được chọn; nếu chọn "Cả năm" nhưng chưa đủ điểm 2 học kỳ,
+// tự động dùng tạm học kỳ nào đã có điểm (ưu tiên HK II) để không bỏ sót học sinh cần theo dõi.
+function getEffectiveClassification(cls, studentId, mode){
+  let effectiveMode = mode;
+  let subjAvgs = getStudentSubjectAverages(cls, studentId, mode);
+  let overall = calcOverall(subjAvgs);
+  if(overall.count===0 && mode==='nam'){
+    const alt2 = getStudentSubjectAverages(cls, studentId, 'hk2');
+    const o2 = calcOverall(alt2);
+    if(o2.count>0){ subjAvgs=alt2; overall=o2; effectiveMode='hk2'; }
+    else{
+      const alt1 = getStudentSubjectAverages(cls, studentId, 'hk1');
+      const o1 = calcOverall(alt1);
+      if(o1.count>0){ subjAvgs=alt1; overall=o1; effectiveMode='hk1'; }
+    }
+  }
+  const label = classify(overall, state.thresholds);
+  return { subjAvgs, overall, label, effectiveMode, usedFallback: effectiveMode!==mode };
+}
+
+/* ---- Random có kiểm soát (seeded) để mỗi học sinh có nhận xét khác nhau nhưng ổn định ---- */
+function hashSeed(str){
+  let h = 0;
+  for(let i=0;i<str.length;i++){ h = (h*31 + str.charCodeAt(i)) >>> 0; }
+  return h;
+}
+function pickVariant(seed, arr){
+  if(!arr || arr.length===0) return '';
+  return arr[hashSeed(String(seed)) % arr.length];
+}
+
+const OVERALL_COMMENT_VARIANTS = {
+  tot:{
+    open:[
+      'Học lực xếp loại Tốt.',
+      'Kết quả học tập xếp loại Tốt, rất đáng khen ngợi.',
+      'Đạt xếp loại Tốt, thể hiện rõ sự nỗ lực và chăm chỉ.',
+      'Xếp loại Tốt — một kết quả học tập rất ấn tượng.',
+      'Học tập xuất sắc, đạt xếp loại Tốt trong đợt này.'
+    ],
+    close:[
+      'Cần tiếp tục phát huy và duy trì kết quả học tập.',
+      'Mong em giữ vững phong độ và tiếp tục cố gắng hơn nữa.',
+      'Hãy tiếp tục phát huy tinh thần học tập tích cực này.',
+      'Cần duy trì thành tích này trong thời gian tới.',
+      'Rất mong em tiếp tục nỗ lực để đạt kết quả tốt hơn nữa.'
+    ]
+  },
+  kha:{
+    open:[
+      'Học lực xếp loại Khá.',
+      'Kết quả học tập xếp loại Khá, khá ổn định.',
+      'Đạt xếp loại Khá, cần cố gắng hơn nữa.',
+      'Xếp loại Khá — một kết quả tương đối tốt.',
+      'Học tập ở mức Khá, có nhiều tiềm năng để tiến bộ hơn.'
+    ],
+    close:[
+      'Cần chăm chỉ hơn để đạt loại Tốt.',
+      'Nếu cố gắng thêm một chút, em hoàn toàn có thể đạt loại Tốt.',
+      'Hãy tiếp tục nỗ lực để nâng cao kết quả học tập.',
+      'Cần đầu tư thêm thời gian ôn luyện để tiến bộ hơn.',
+      'Cố gắng phát huy thêm để đạt kết quả cao hơn trong thời gian tới.'
+    ]
+  },
+  dat:{
+    open:[
+      'Học lực xếp loại Đạt.',
+      'Kết quả học tập xếp loại Đạt, ở mức trung bình.',
+      'Đạt yêu cầu, nhưng còn nhiều điều cần cải thiện.',
+      'Xếp loại Đạt — cần cố gắng nhiều hơn trong thời gian tới.',
+      'Kết quả học tập ở mức Đạt, cần được quan tâm nhiều hơn.'
+    ],
+    close:[
+      'Cần tăng cường ôn tập và rèn luyện ý thức học tập.',
+      'Em cần dành nhiều thời gian hơn cho việc học.',
+      'Cần có kế hoạch học tập cụ thể để cải thiện kết quả.',
+      'Rất cần sự đồng hành của gia đình để cải thiện kết quả học tập.',
+      'Cần cố gắng nhiều hơn để theo kịp chương trình học.'
+    ]
+  },
+  chuadat:{
+    open:[
+      'Học lực xếp loại Chưa đạt.',
+      'Kết quả học tập hiện tại chưa đạt yêu cầu.',
+      'Xếp loại Chưa đạt, cần có biện pháp cải thiện ngay.',
+      'Kết quả học tập đáng lo ngại, cần được quan tâm sát sao.',
+      'Chưa đạt yêu cầu, cần nỗ lực rất nhiều trong thời gian tới.'
+    ],
+    close:[
+      'Đề nghị phụ đạo thêm và cần sự quan tâm sát sao từ gia đình.',
+      'Cần xây dựng kế hoạch học tập nghiêm túc và được hỗ trợ kịp thời.',
+      'Rất cần sự phối hợp giữa gia đình và nhà trường để giúp em tiến bộ.',
+      'Cần được kèm cặp thêm để bắt kịp chương trình học.',
+      'Đề nghị gia đình quan tâm, đôn đốc việc học tập của em nhiều hơn.'
+    ]
+  }
+};
+
+function generateAutoComment(cls, student, mode){
+  const subjAvgs = getStudentSubjectAverages(cls, student.id, mode);
+  const overall = calcOverall(subjAvgs);
+  const label = classify(overall, state.thresholds);
+  if(label==='none'){
+    return 'Chưa có đủ dữ liệu điểm để nhận xét.';
+  }
+  const strong = [], weak = [], medium = [];
+  cls.subjects.forEach(sub=>{
+    const v = subjAvgs[sub.id];
+    if(v===null||v===undefined) return;
+    if(v>=8) strong.push(sub.name);
+    else if(v<5) weak.push(sub.name);
+    else medium.push(sub.name);
+  });
+
+  const variants = OVERALL_COMMENT_VARIANTS[label];
+  const seedBase = student.id+'_'+mode;
+  let parts = [];
+  parts.push(pickVariant(seedBase+'_open', variants.open));
+  if(label==='tot'){
+    if(strong.length) parts.push('Các môn học nổi bật: '+strong.join(', ')+'.');
+  } else if(label==='kha'){
+    if(strong.length) parts.push('Học tốt ở các môn: '+strong.join(', ')+'.');
+    if(weak.length) parts.push('Cần cố gắng thêm ở môn: '+weak.join(', ')+'.');
+  } else if(label==='dat'){
+    if(weak.length) parts.push('Cần tập trung cải thiện ở các môn: '+weak.join(', ')+'.');
+  } else {
+    if(weak.length) parts.push('Cần nỗ lực nhiều hơn ở các môn: '+weak.join(', ')+'.');
+  }
+  parts.push(pickVariant(seedBase+'_close', variants.close));
+
+  // So sánh HK1 vs HK2 nếu đang xem cả năm
+  if(mode==='nam'){
+    const avg1 = getStudentSubjectAverages(cls, student.id, 'hk1');
+    const avg2 = getStudentSubjectAverages(cls, student.id, 'hk2');
+    const o1 = calcOverall(avg1), o2 = calcOverall(avg2);
+    if(o1.dtb!==null && o2.dtb!==null){
+      const diff = o2.dtb - o1.dtb;
+      if(diff>=0.5) parts.push('Có tiến bộ rõ rệt so với học kỳ I.');
+      else if(diff<=-0.5) parts.push('Kết quả học kỳ II giảm sút so với học kỳ I, cần lưu ý.');
+    }
+  }
+  return parts.join(' ');
+}
+
+function getComment(cls, student, mode){
+  const key = student.id+'_'+mode;
+  if(cls.customComments[key]) return cls.customComments[key];
+  return generateAutoComment(cls, student, mode);
+}
+
+/* ---- Nhận xét riêng theo từng môn (theo đợt/học kỳ hoặc cả năm) ---- */
+const SUBJECT_COMMENT_VARIANTS = {
+  tot:[
+    'Học tốt, nắm vững kiến thức, cần phát huy.',
+    'Nắm chắc kiến thức, tiếp thu bài rất tốt.',
+    'Học rất tốt môn này, cần giữ vững phong độ.',
+    'Thể hiện sự chăm chỉ và hiểu bài tốt.',
+    'Vận dụng kiến thức tốt, cần tiếp tục phát huy.'
+  ],
+  kha:[
+    'Học khá, cần cố gắng thêm để đạt loại giỏi.',
+    'Nắm được kiến thức cơ bản, cần rèn luyện thêm.',
+    'Học tương đối tốt, cần chăm chỉ hơn nữa.',
+    'Có tiến bộ, cần tiếp tục cố gắng.',
+    'Tiếp thu bài khá tốt, cần luyện tập thêm để chắc kiến thức.'
+  ],
+  dat:[
+    'Đạt yêu cầu, cần chăm chỉ và ôn tập thêm.',
+    'Nắm được kiến thức cơ bản nhưng chưa vững, cần ôn tập kỹ hơn.',
+    'Cần dành nhiều thời gian hơn cho môn học này.',
+    'Kết quả ở mức trung bình, cần cố gắng hơn.',
+    'Cần luyện tập thêm để nắm chắc kiến thức trọng tâm.'
+  ],
+  yeu:[
+    'Chưa đạt yêu cầu, cần cố gắng nhiều hơn ở môn này.',
+    'Còn yếu kiến thức cơ bản, cần được kèm cặp thêm.',
+    'Cần dành nhiều thời gian ôn tập lại kiến thức đã học.',
+    'Kết quả chưa tốt, cần có kế hoạch học tập cụ thể hơn.',
+    'Mất gốc kiến thức, cần phụ đạo thêm ở môn này.'
+  ]
+};
+
+function generateAutoSubjectComment(tb, trend, seed){
+  if(tb===null || tb===undefined) return 'Chưa có điểm.';
+  let tier;
+  if(tb>=8) tier='tot';
+  else if(tb>=6.5) tier='kha';
+  else if(tb>=5) tier='dat';
+  else tier='yeu';
+  let base = pickVariant(seed!==undefined ? seed : tb+'_'+tier, SUBJECT_COMMENT_VARIANTS[tier]);
+  if(trend!==null && trend!==undefined){
+    if(trend>=1) base += ' Có tiến bộ rõ so với học kỳ I.';
+    else if(trend<=-1) base += ' Giảm sút so với học kỳ I, cần lưu ý.';
+  }
+  return base;
+}
+
+function subjectCommentKey(studentId, subjectId, period){ return studentId+'_'+subjectId+'_'+period; }
+
+function getSubjectComment(cls, studentId, subjectId, period, tb, trend){
+  const key = subjectCommentKey(studentId, subjectId, period);
+  if(cls.subjectComments[key]) return cls.subjectComments[key];
+  return generateAutoSubjectComment(tb, trend, key);
+}
+
+function openSubjectCommentModal(cls, student, subjectId, period, tb, trend, onSaved){
+  const subject = cls.subjects.find(s=>s.id===subjectId);
+  if(!subject) return;
+  const key = subjectCommentKey(student.id, subjectId, period);
+  const periodLabel = period==='hk1'?'Học kỳ I':period==='hk2'?'Học kỳ II':'Cả năm';
+  const current = getSubjectComment(cls, student.id, subjectId, period, tb, trend);
+  const overlay = document.createElement('div');
+  overlay.className = 'modal-overlay';
+  overlay.innerHTML = `
+    <div class="modal">
+      <h3>📘 ${escapeHtml(subject.name)} — ${escapeHtml(student.name)}</h3>
+      <p class="muted">${periodLabel} · TB môn: ${tb===null||tb===undefined?'—':tb.toFixed(1)}</p>
+      <div class="field">
+        <label>Nhận xét môn học</label>
+        <textarea id="subjCommentBox">${escapeHtml(current)}</textarea>
+      </div>
+      <div class="modal-actions">
+        <button class="link-btn" id="btnResetSubjComment">↺ Khôi phục nhận xét tự động</button>
+        <button id="btnCloseSubjComment">Đóng</button>
+        <button class="primary" id="btnSaveSubjComment">Lưu</button>
+      </div>
+    </div>`;
+  document.body.appendChild(overlay);
+  overlay.addEventListener('click', e=>{ if(e.target===overlay) overlay.remove(); });
+  overlay.querySelector('#btnCloseSubjComment').addEventListener('click', ()=>overlay.remove());
+  overlay.querySelector('#btnResetSubjComment').addEventListener('click', ()=>{
+    delete cls.subjectComments[key];
+    saveState();
+    overlay.querySelector('#subjCommentBox').value = generateAutoSubjectComment(tb, trend, key);
+  });
+  overlay.querySelector('#btnSaveSubjComment').addEventListener('click', ()=>{
+    cls.subjectComments[key] = overlay.querySelector('#subjCommentBox').value;
+    saveState();
+    overlay.remove();
+    if(onSaved) onSaved(); else renderAll();
+  });
+}
+
+/* ===================== BIỂU ĐỒ XU HƯỚNG ĐIỂM ===================== */
+// Lấy danh sách các điểm đã nhập theo đúng trình tự thời gian (HK I rồi HK II) cho 1 môn học
+function getSubjectTrendPoints(cls, studentId, subjectId){
+  const points = [];
+  ['hk1','hk2'].forEach(sem=>{
+    const semLabel = sem==='hk1' ? 'I' : 'II';
+    const entry = getScoreEntry(cls, studentId, subjectId, sem);
+    (entry.tx||[]).forEach((v,i)=>{
+      if(v!==null && v!==undefined && v!==''){ points.push({ label:semLabel+'.M'+(i+1), value:Number(v), type:'tx', sem }); }
+    });
+    (entry.gk||[]).forEach((v,i)=>{
+      if(v!==null && v!==undefined && v!==''){ points.push({ label:semLabel+'.1T'+(i+1), value:Number(v), type:'gk', sem }); }
+    });
+    (entry.ck||[]).forEach((v,i)=>{
+      if(v!==null && v!==undefined && v!==''){ points.push({ label:semLabel+'.HK', value:Number(v), type:'ck', sem }); }
+    });
+  });
+  return points;
+}
+
+function renderTrendSVG(points){
+  if(points.length===0){
+    return '<p class="muted">Chưa có đủ điểm để vẽ biểu đồ. Hãy nhập điểm cho môn này ở tab "Nhập điểm".</p>';
+  }
+  const w = Math.max(420, points.length*54);
+  const h = 230;
+  const padL = 32, padR = 16, padT = 16, padB = 40;
+  const plotW = w-padL-padR, plotH = h-padT-padB;
+  const xStep = points.length>1 ? plotW/(points.length-1) : 0;
+  const yFor = v => padT + plotH - (Math.max(0,Math.min(10,v))/10)*plotH;
+  const xFor = i => padL + i*xStep;
+  const colorFor = t => t==='tx' ? '#2563eb' : t==='gk' ? '#d97706' : '#16a34a';
+
+  let grid = '';
+  for(let g=0; g<=10; g+=2){
+    const y = yFor(g);
+    grid += `<line x1="${padL}" y1="${y}" x2="${w-padR}" y2="${y}" stroke="#e2e8f0" stroke-width="1"/><text x="${padL-6}" y="${y+4}" font-size="10" fill="#64748b" text-anchor="end">${g}</text>`;
+  }
+  const path = points.map((p,i)=> (i===0?'M':'L')+xFor(i).toFixed(1)+','+yFor(p.value).toFixed(1)).join(' ');
+  const dots = points.map((p,i)=> `<circle cx="${xFor(i).toFixed(1)}" cy="${yFor(p.value).toFixed(1)}" r="5" fill="${colorFor(p.type)}" stroke="#fff" stroke-width="1.5"><title>${p.label}: ${p.value}</title></circle>`).join('');
+  const valueLabels = points.map((p,i)=> `<text x="${xFor(i).toFixed(1)}" y="${yFor(p.value)-10}" font-size="10" fill="#334155" text-anchor="middle">${p.value}</text>`).join('');
+  const xLabels = points.map((p,i)=> `<text x="${xFor(i).toFixed(1)}" y="${h-padB+16}" font-size="10" fill="#64748b" text-anchor="middle">${p.label}</text>`).join('');
+  let semDivider = '';
+  const firstHk2Idx = points.findIndex(p=>p.sem==='hk2');
+  if(firstHk2Idx>0){
+    const dx = xFor(firstHk2Idx) - xStep/2;
+    semDivider = `<line x1="${dx.toFixed(1)}" y1="${padT}" x2="${dx.toFixed(1)}" y2="${h-padB}" stroke="#cbd5e1" stroke-width="1" stroke-dasharray="4,3"/>`;
+  }
+  return `<svg viewBox="0 0 ${w} ${h}" width="100%" style="max-width:${w}px;display:block;">
+    ${grid}${semDivider}
+    <path d="${path}" fill="none" stroke="#94a3b8" stroke-width="2"/>
+    ${dots}${valueLabels}${xLabels}
+  </svg>
+  <div class="row" style="margin-top:6px;font-size:12px;color:var(--muted);">
+    <span>● <span style="color:#2563eb;">Miệng/15p</span></span>
+    <span>● <span style="color:#d97706;">1 tiết</span></span>
+    <span>● <span style="color:#16a34a;">Học kỳ</span></span>
+  </div>`;
+}
+
+/* ===================== HỌC SINH CẦN CHÚ Ý (WATCHLIST) ===================== */
+function computeWatchlist(cls, mode){
+  const t = state.thresholds.watch || DEFAULT_THRESHOLDS.watch;
+  const results = [];
+  cls.students.forEach(student=>{
+    const avg1 = getStudentSubjectAverages(cls, student.id, 'hk1');
+    const avg2 = getStudentSubjectAverages(cls, student.id, 'hk2');
+    const o1 = calcOverall(avg1), o2 = calcOverall(avg2);
+    let trend = null;
+    if(o1.dtb!==null && o2.dtb!==null) trend = roundVN(o2.dtb - o1.dtb);
+
+    // Xếp loại theo mode đang chọn; nếu mode "cả năm" nhưng chưa đủ dữ liệu 2 học kỳ
+    // thì dùng tạm học kỳ nào đã có điểm để không bỏ sót học sinh yếu ngay từ đầu năm.
+    const eff = getEffectiveClassification(cls, student.id, mode);
+    const overall = eff.overall, label = eff.label, usedFallback = eff.usedFallback;
+
+    // Môn điểm rất thấp: xét trên cả HK I và HK II đã có điểm (không chỉ riêng mode đang chọn)
+    const weakSubjects = [];
+    cls.subjects.forEach(sub=>{
+      [avg1[sub.id], avg2[sub.id]].forEach(v=>{
+        if(v!==null && v!==undefined && v < t.weakSubject && !weakSubjects.find(w=>w.name===sub.name)){
+          weakSubjects.push({ name: sub.name, tb: v });
+        }
+      });
+    });
+
+    const reasons = [];
+    if(label==='chuadat') reasons.push('Xếp loại '+CLASSIFY_LABEL[label]+(usedFallback?' (theo dữ liệu học kỳ đã có)':''));
+    if(weakSubjects.length) reasons.push('Có môn điểm rất thấp: '+weakSubjects.map(w=>w.name+' ('+w.tb.toFixed(1)+')').join(', '));
+    if(trend!==null && trend <= -t.declineDrop) reasons.push('Giảm sút rõ rệt giữa HK I và HK II ('+trend.toFixed(1)+' điểm)');
+
+    if(reasons.length>0){
+      results.push({ student, label, overall, trend, weakSubjects, reasons });
+    }
+  });
+  const order = {chuadat:0, dat:1, kha:2, tot:3, none:4};
+  results.sort((a,b)=>{
+    if(a.label!==b.label) return order[a.label]-order[b.label];
+    return (a.overall.dtb ?? 99) - (b.overall.dtb ?? 99);
+  });
+  return results;
+}
+
+function computeMissingScores(cls, semester){
+  const results = [];
+  cls.students.forEach(student=>{
+    const missing = [];
+    cls.subjects.forEach(sub=>{
+      const e = getScoreEntry(cls, student.id, sub.id, semester);
+      const has = (e.tx&&e.tx.length) || (e.gk&&e.gk.length) || (e.ck&&e.ck.length);
+      if(!has) missing.push(sub.name);
+    });
+    if(missing.length>0) results.push({ student, missing });
+  });
+  return results;
+}
+
+/* ===================== TIẾN BỘ / XUẤT SẮC / CẬN KỀ LÊN HẠNG ===================== */
+function computeProgressList(cls, mode){
+  const t = state.thresholds.progress || DEFAULT_THRESHOLDS.progress;
+  const results = [];
+  cls.students.forEach(student=>{
+    const avg1 = getStudentSubjectAverages(cls, student.id, 'hk1');
+    const avg2 = getStudentSubjectAverages(cls, student.id, 'hk2');
+    const o1 = calcOverall(avg1), o2 = calcOverall(avg2);
+    let trend = null;
+    if(o1.dtb!==null && o2.dtb!==null) trend = roundVN(o2.dtb - o1.dtb);
+    const eff = getEffectiveClassification(cls, student.id, mode);
+    const avgMode = mode==='hk1' ? avg1 : mode==='hk2' ? avg2 : getStudentSubjectAverages(cls, student.id, 'nam');
+
+    const excellentSubjects = [];
+    cls.subjects.forEach(sub=>{
+      const v = avgMode[sub.id];
+      if(v!==null && v!==undefined && v>=t.excellentSubject) excellentSubjects.push({ name: sub.name, tb: v });
+    });
+
+    const reasons = [];
+    if(trend!==null && trend >= t.riseImprove) reasons.push('Tiến bộ vượt bậc: tăng '+trend.toFixed(1)+' điểm từ HK I sang HK II');
+    if(excellentSubjects.length) reasons.push('Có môn đạt điểm xuất sắc: '+excellentSubjects.map(s=>s.name+' ('+s.tb.toFixed(1)+')').join(', '));
+    if(eff.label==='tot') reasons.push('Xếp loại Tốt'+(eff.overall.dtb!==null?' (ĐTB '+eff.overall.dtb.toFixed(1)+')':''));
+
+    if(reasons.length>0){
+      results.push({ student, trend, excellentSubjects, label: eff.label, overall: eff.overall, reasons });
+    }
+  });
+  results.sort((a,b)=>(b.overall.dtb ?? 0)-(a.overall.dtb ?? 0));
+  return results;
+}
+
+function computeNearPromotion(cls, mode){
+  const t = state.thresholds;
+  const gapAllow = (state.thresholds.progress || DEFAULT_THRESHOLDS.progress).nearPromoteGap;
+  const tiers = [
+    { key:'dat', next:'kha', nextThreshold:t.kha },
+    { key:'kha', next:'tot', nextThreshold:t.tot }
+  ];
+  const results = [];
+  cls.students.forEach(student=>{
+    const eff = getEffectiveClassification(cls, student.id, mode);
+    if(eff.overall.dtb===null) return;
+    const tierInfo = tiers.find(x=>x.key===eff.label);
+    if(!tierInfo) return;
+    const gap = roundVN(tierInfo.nextThreshold.dtb - eff.overall.dtb);
+    if(gap!==null && gap>=0 && gap<=gapAllow){
+      const minOk = eff.overall.min!==null && eff.overall.min>=tierInfo.nextThreshold.minMon;
+      results.push({ student, fromLabel: eff.label, toLabel: tierInfo.next, gap, minOk, overall: eff.overall });
+    }
+  });
+  results.sort((a,b)=>a.gap-b.gap);
+  return results;
+}
+
+/* ===================== NHẬT KÝ GHI CHÚ HỌC SINH ===================== */
+const NOTE_TYPES = { khen:'Khen ngợi', nhac:'Nhắc nhở', theodoi:'Theo dõi', khac:'Khác' };
+
+function addStudentNote(cls, studentId, text, type){
+  if(!cls.studentNotes[studentId]) cls.studentNotes[studentId] = [];
+  cls.studentNotes[studentId].push({ id: uid(), date: new Date().toISOString(), text, type: type||'khac' });
+  saveState();
+}
+function deleteStudentNote(cls, studentId, noteId){
+  if(!cls.studentNotes[studentId]) return;
+  cls.studentNotes[studentId] = cls.studentNotes[studentId].filter(n=>n.id!==noteId);
+  saveState();
+}
+function getAllRecentNotes(cls, limit){
+  const all = [];
+  Object.entries(cls.studentNotes||{}).forEach(([sid, notes])=>{
+    const student = cls.students.find(s=>s.id===sid);
+    if(!student) return;
+    (notes||[]).forEach(n=> all.push(Object.assign({}, n, { studentName: student.name, studentId: sid })));
+  });
+  all.sort((a,b)=> new Date(b.date) - new Date(a.date));
+  return limit ? all.slice(0, limit) : all;
+}
+
+/* ===================== MỤC TIÊU CÁ NHÂN ===================== */
+function getGoal(cls, studentId, mode){
+  return cls.goals[studentId+'_'+mode] || null;
+}
+function setGoal(cls, studentId, mode, target, note){
+  cls.goals[studentId+'_'+mode] = { target, note: note||'', updatedAt: new Date().toISOString() };
+  saveState();
+}
+function clearGoal(cls, studentId, mode){
+  delete cls.goals[studentId+'_'+mode];
+  saveState();
+}
+
+/* ===================== TIN NHẮN PHỤ HUYNH ===================== */
+function generateParentMessage(cls, student, mode){
+  const eff = getEffectiveClassification(cls, student.id, mode);
+  const periodLabel = eff.effectiveMode==='hk1' ? 'học kỳ I' : eff.effectiveMode==='hk2' ? 'học kỳ II' : 'cả năm học';
+  const comment = getComment(cls, student, eff.effectiveMode);
+  const dtbText = eff.overall.dtb===null ? 'chưa có đủ dữ liệu' : eff.overall.dtb.toFixed(1);
+  const labelText = CLASSIFY_LABEL[eff.label];
+  return `Kính gửi quý phụ huynh em ${student.name} (lớp ${cls.name}).\nKết quả học tập ${periodLabel}: điểm trung bình ${dtbText} - xếp loại ${labelText}.\n${comment}\nRất mong quý phụ huynh quan tâm, phối hợp cùng nhà trường trong việc giáo dục các em.\nTrân trọng, GVCN.`;
+}
+
+function copyTextToClipboard(text, onDone){
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(text).then(()=>onDone(true)).catch(()=>fallbackCopy(text, onDone));
+  } else {
+    fallbackCopy(text, onDone);
+  }
+}
+function fallbackCopy(text, onDone){
+  try{
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.position = 'fixed';
+    ta.style.opacity = '0';
+    document.body.appendChild(ta);
+    ta.focus(); ta.select();
+    const ok = document.execCommand('copy');
+    document.body.removeChild(ta);
+    onDone(ok);
+  }catch(e){ onDone(false); }
+}
+
+function openParentMessageModal(cls, student, mode){
+  const overlay = document.createElement('div');
+  overlay.className = 'modal-overlay';
+  const periodLabel = mode==='hk1' ? 'Học kỳ I' : mode==='hk2' ? 'Học kỳ II' : 'Cả năm';
+
+  function render(){
+    const message = generateParentMessage(cls, student, mode);
+    overlay.innerHTML = `
+      <div class="modal">
+        <h3>✉️ Soạn tin nhắn phụ huynh — ${escapeHtml(student.name)}</h3>
+        <p class="muted">${periodLabel} · Lớp ${escapeHtml(cls.name)}</p>
+        <div class="field">
+          <label>SĐT phụ huynh</label>
+          <input type="text" id="parentPhoneInput" value="${escapeHtml(student.parentPhone||'')}" placeholder="Chưa có số điện thoại">
+        </div>
+        <div class="field">
+          <label>Nội dung tin nhắn</label>
+          <textarea id="parentMsgBox" style="min-height:140px;">${escapeHtml(message)}</textarea>
+        </div>
+        <div class="modal-actions">
+          <button id="btnClosePM">Đóng</button>
+          <button id="btnSavePhone">Lưu SĐT</button>
+          <button class="primary" id="btnCopyPM">📋 Sao chép tin nhắn</button>
+        </div>
+      </div>`;
+    overlay.querySelector('#btnClosePM').addEventListener('click', ()=>overlay.remove());
+    overlay.querySelector('#btnSavePhone').addEventListener('click', ()=>{
+      student.parentPhone = overlay.querySelector('#parentPhoneInput').value.trim();
+      saveState();
+      alert('Đã lưu số điện thoại phụ huynh.');
+      renderAll();
+    });
+    overlay.querySelector('#btnCopyPM').addEventListener('click', ()=>{
+      const text = overlay.querySelector('#parentMsgBox').value;
+      copyTextToClipboard(text, ok=>{
+        alert(ok ? 'Đã sao chép nội dung tin nhắn.' : 'Không thể sao chép tự động, vui lòng bôi đen và sao chép thủ công.');
+      });
+    });
+  }
+  render();
+  document.body.appendChild(overlay);
+  overlay.addEventListener('click', e=>{ if(e.target===overlay) overlay.remove(); });
+}
+
+function generatePraiseMessage(cls, student, mode, reasonsText){
+  const eff = getEffectiveClassification(cls, student.id, mode);
+  const periodLabel = eff.effectiveMode==='hk1' ? 'học kỳ I' : eff.effectiveMode==='hk2' ? 'học kỳ II' : 'cả năm học';
+  const dtbText = eff.overall.dtb===null ? 'chưa có đủ dữ liệu' : eff.overall.dtb.toFixed(1);
+  return `Kính gửi quý phụ huynh em ${student.name} (lớp ${cls.name}).\nNhà trường xin thông báo tin vui: trong ${periodLabel}, em đã có thành tích rất đáng khen ngợi (ĐTB ${dtbText}).\n${reasonsText}\nRất mong quý phụ huynh tiếp tục động viên, khích lệ em phát huy. Trân trọng, GVCN.`;
+}
+
+function openPraiseMessageModal(cls, student, mode, reasons){
+  const overlay = document.createElement('div');
+  overlay.className = 'modal-overlay';
+  const periodLabel = mode==='hk1' ? 'Học kỳ I' : mode==='hk2' ? 'Học kỳ II' : 'Cả năm';
+  const reasonsText = reasons.join('. ');
+  const message = generatePraiseMessage(cls, student, mode, reasonsText);
+  overlay.innerHTML = `
+    <div class="modal">
+      <h3>🌟 Lời khen gửi phụ huynh — ${escapeHtml(student.name)}</h3>
+      <p class="muted">${periodLabel} · Lớp ${escapeHtml(cls.name)}</p>
+      <div class="field">
+        <label>SĐT phụ huynh</label>
+        <input type="text" id="parentPhoneInput" value="${escapeHtml(student.parentPhone||'')}" placeholder="Chưa có số điện thoại">
+      </div>
+      <div class="field">
+        <label>Nội dung tin nhắn</label>
+        <textarea id="parentMsgBox" style="min-height:140px;">${escapeHtml(message)}</textarea>
+      </div>
+      <div class="modal-actions">
+        <button id="btnClosePM">Đóng</button>
+        <button id="btnSavePhone">Lưu SĐT</button>
+        <button class="primary" id="btnCopyPM">📋 Sao chép tin nhắn</button>
+      </div>
+    </div>`;
+  document.body.appendChild(overlay);
+  overlay.addEventListener('click', e=>{ if(e.target===overlay) overlay.remove(); });
+  overlay.querySelector('#btnClosePM').addEventListener('click', ()=>overlay.remove());
+  overlay.querySelector('#btnSavePhone').addEventListener('click', ()=>{
+    student.parentPhone = overlay.querySelector('#parentPhoneInput').value.trim();
+    saveState();
+    alert('Đã lưu số điện thoại phụ huynh.');
+  });
+  overlay.querySelector('#btnCopyPM').addEventListener('click', ()=>{
+    const text = overlay.querySelector('#parentMsgBox').value;
+    copyTextToClipboard(text, ok=>{
+      alert(ok ? 'Đã sao chép nội dung tin nhắn.' : 'Không thể sao chép tự động, vui lòng bôi đen và sao chép thủ công.');
+    });
+  });
+}
+
+/* ===================== RENDER: HEADER / CLASS SELECT ===================== */
+function renderClassSelect(){
+  const sel = document.getElementById('classSelect');
+  sel.innerHTML = '';
+  if(state.classes.length===0){
+    const opt = document.createElement('option');
+    opt.textContent = 'Chưa có lớp nào';
+    sel.appendChild(opt);
+    return;
+  }
+  state.classes.forEach(c=>{
+    const opt = document.createElement('option');
+    opt.value = c.id; opt.textContent = c.name;
+    if(c.id===state.currentClassId) opt.selected = true;
+    sel.appendChild(opt);
+  });
+}
+
+document.getElementById('classSelect').addEventListener('change', e=>{
+  state.currentClassId = e.target.value;
+  saveState();
+  renderAll();
+});
+
+document.getElementById('btnNewClass').addEventListener('click', ()=>{
+  openModal({
+    title:'Tạo lớp mới',
+    fields:[{name:'name', label:'Tên lớp (VD: 10A1)', type:'text', placeholder:'Nhập tên lớp'}],
+    onSubmit(values){
+      if(!values.name || !values.name.trim()) return alert('Vui lòng nhập tên lớp');
+      const c = ensureClassShape({ id: uid(), name: values.name.trim(), subjects: DEFAULT_SUBJECTS.map(n=>({id:uid(), name:n})) });
+      state.classes.push(c);
+      state.currentClassId = c.id;
+      saveState();
+      renderAll();
+    }
+  });
+});
+
+document.getElementById('btnSettings').addEventListener('click', openSettingsModal);
+
+/* ===================== TABS ===================== */
+let activeTab = 'dashboard';
+document.getElementById('tabs').addEventListener('click', e=>{
+  const btn = e.target.closest('button[data-tab]');
+  if(!btn) return;
+  activeTab = btn.dataset.tab;
+  renderAll();
+});
+
+function renderTabs(){
+  document.querySelectorAll('#tabs button').forEach(b=>{
+    b.classList.toggle('active', b.dataset.tab===activeTab);
+  });
+}
+
+/* ===================== MAIN RENDER DISPATCH ===================== */
+function renderAll(){
+  renderClassSelect();
+  renderTabs();
+  const main = document.getElementById('main');
+  const cls = getCurrentClass();
+  if(!cls){
+    main.innerHTML = `<div class="card empty">
+      <div class="big">🏫</div>
+      <h2>Chưa có lớp học nào</h2>
+      <p class="muted">Nhấn "+ Lớp mới" ở góc trên để bắt đầu tạo lớp và nhập danh sách học sinh.</p>
+    </div>`;
+    return;
+  }
+  ensureClassShape(cls);
+  if(activeTab==='dashboard') renderDashboardTab(main, cls);
+  else if(activeTab==='students') renderStudentsTab(main, cls);
+  else if(activeTab==='subjects') renderSubjectsTab(main, cls);
+  else if(activeTab==='scores') renderScoresTab(main, cls);
+  else if(activeTab==='summary') renderSummaryTab(main, cls);
+  else if(activeTab==='yearly') renderYearlyTab(main, cls);
+  else if(activeTab==='chart') renderChartTab(main, cls);
+  else if(activeTab==='watchlist') renderWatchlistTab(main, cls);
+  else if(activeTab==='progress') renderProgressTab(main, cls);
+  else if(activeTab==='messages') renderMessagesTab(main, cls);
+  else if(activeTab==='notes') renderNotesTab(main, cls);
+}
+
+/* ===================== TAB: TỔNG QUAN (DASHBOARD) ===================== */
+let dashboardUI = { mode:'hk1' };
+
+function renderDashboardTab(main, cls){
+  if(cls.students.length===0){
+    main.innerHTML = `<div class="card empty"><div class="big">🏠</div>Thêm học sinh và môn học để xem tổng quan lớp học.</div>`;
+    return;
+  }
+  const mode = dashboardUI.mode;
+  const avgAll = cls.students.map(s=>getEffectiveClassification(cls, s.id, mode).overall.dtb).filter(v=>v!==null);
+  const classAvg = avgAll.length ? roundVN(avgAll.reduce((a,b)=>a+b,0)/avgAll.length) : null;
+  const watch = computeWatchlist(cls, mode);
+  const progress = computeProgressList(cls, mode);
+  const nearPromo = computeNearPromotion(cls, mode);
+  const missing = computeMissingScores(cls, mode==='hk2' ? 'hk2' : 'hk1');
+  const recentNotes = getAllRecentNotes(cls, 5);
+
+  main.innerHTML = `
+  <div class="card">
+    <div class="row between">
+      <h2>🏠 Tổng quan lớp ${escapeHtml(cls.name)}</h2>
+      <select id="dashModeSelect">
+        <option value="hk1">Học kỳ I</option>
+        <option value="hk2">Học kỳ II</option>
+        <option value="nam">Cả năm</option>
+      </select>
+    </div>
+    <div class="stat-grid">
+      <div class="stat-box"><div class="num">${cls.students.length}</div><div class="lbl">Học sinh</div></div>
+      <div class="stat-box"><div class="num">${cls.subjects.length}</div><div class="lbl">Môn học</div></div>
+      <div class="stat-box"><div class="num">${classAvg===null?'—':classAvg.toFixed(1)}</div><div class="lbl">ĐTB cả lớp</div></div>
+      <div class="stat-box"><div class="num" style="color:var(--bad)">${watch.length}</div><div class="lbl">Cần chú ý</div></div>
+      <div class="stat-box"><div class="num" style="color:var(--good)">${progress.length}</div><div class="lbl">Tiến bộ/Xuất sắc</div></div>
+      <div class="stat-box"><div class="num" style="color:var(--khaC)">${nearPromo.length}</div><div class="lbl">Cận kề lên hạng</div></div>
+      <div class="stat-box"><div class="num" style="color:var(--dat)">${missing.length}</div><div class="lbl">Thiếu điểm</div></div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="row between"><h2>📌 Cảnh báo thiếu điểm</h2><button class="small" data-goto="scores">Vào nhập điểm</button></div>
+    ${missing.length===0 ? `<div class="empty">✅ Không có học sinh nào thiếu điểm.</div>` :
+      `<ul style="margin:0;padding-left:18px;font-size:13px;">${missing.slice(0,8).map(m=>`<li><strong>${escapeHtml(m.student.name)}</strong>: thiếu ${escapeHtml(m.missing.join(', '))}</li>`).join('')}</ul>
+      ${missing.length>8?`<p class="muted">...và ${missing.length-8} học sinh khác.</p>`:''}`}
+  </div>
+  <div class="grid2">
+    <div class="card">
+      <div class="row between"><h2>⚠️ Cần chú ý</h2><button class="small" data-goto="watchlist">Xem tất cả</button></div>
+      ${watch.length===0?`<div class="empty">Không có.</div>`: `<ul style="margin:0;padding-left:18px;font-size:13px;">${watch.slice(0,5).map(w=>`<li>${escapeHtml(w.student.name)} — ${CLASSIFY_LABEL[w.label]}</li>`).join('')}</ul>`}
+    </div>
+    <div class="card">
+      <div class="row between"><h2>🌟 Tiến bộ/Xuất sắc</h2><button class="small" data-goto="progress">Xem tất cả</button></div>
+      ${progress.length===0?`<div class="empty">Chưa có.</div>`: `<ul style="margin:0;padding-left:18px;font-size:13px;">${progress.slice(0,5).map(p=>`<li>${escapeHtml(p.student.name)}</li>`).join('')}</ul>`}
+    </div>
+  </div>
+  <div class="card">
+    <div class="row between"><h2>📝 Ghi chú gần đây</h2><button class="small" data-goto="notes">Xem tất cả</button></div>
+    ${recentNotes.length===0?`<div class="empty">Chưa có ghi chú nào.</div>`:
+      `<ul style="margin:0;padding-left:18px;font-size:13px;">${recentNotes.map(n=>`<li><strong>${escapeHtml(n.studentName)}</strong> (${new Date(n.date).toLocaleDateString('vi-VN')}): ${escapeHtml(n.text.slice(0,80))}${n.text.length>80?'…':''}</li>`).join('')}</ul>`}
+  </div>`;
+
+  document.getElementById('dashModeSelect').value = mode;
+  document.getElementById('dashModeSelect').addEventListener('change', e=>{ dashboardUI.mode = e.target.value; renderDashboardTab(main, cls); });
+  main.querySelectorAll('[data-goto]').forEach(btn=>{
+    btn.addEventListener('click', ()=>{ activeTab = btn.dataset.goto; renderAll(); });
+  });
+}
+
+/* ===================== TAB: HỌC SINH ===================== */
+function renderStudentsTab(main, cls){
+  main.innerHTML = `
+  <div class="card">
+    <div class="row between">
+      <h2>👥 Danh sách học sinh — ${escapeHtml(cls.name)} (${cls.students.length})</h2>
+      <div class="row">
+        <button class="primary" id="btnAddStudent">+ Thêm học sinh</button>
+        <label class="primary" style="display:inline-block;" for="fileImport">
+          <button type="button" id="btnImportExcel">📥 Nhập từ Excel</button>
+        </label>
+        <input type="file" id="fileImport" accept=".xlsx,.xls,.csv" style="display:none;">
+        <button id="btnClearStudents" class="danger">Xoá tất cả</button>
+      </div>
+    </div>
+    <p class="muted">File Excel cần có cột chứa họ tên học sinh (ví dụ: "Họ và tên"). Ứng dụng sẽ tự tìm cột phù hợp, hoặc dùng cột đầu tiên nếu không thấy.</p>
+    <div id="studentsList"></div>
+  </div>`;
+
+  const listEl = document.getElementById('studentsList');
+  if(cls.students.length===0){
+    listEl.innerHTML = `<div class="empty"><div class="big">📄</div>Chưa có học sinh nào trong lớp này.</div>`;
+  } else {
+    let html = '<table><thead><tr><th style="width:50px;">STT</th><th class="name-cell">Họ và tên</th><th style="width:110px;">Giới tính</th><th style="width:140px;">Ngày sinh</th><th style="width:130px;">SĐT phụ huynh</th><th style="width:120px;">Thao tác</th></tr></thead><tbody>';
+    cls.students.forEach((s,i)=>{
+      html += `<tr>
+        <td>${i+1}</td>
+        <td class="name-cell">${escapeHtml(s.name)}</td>
+        <td>${s.gender||''}</td>
+        <td>${s.dob||''}</td>
+        <td>${escapeHtml(s.parentPhone||'')||'<span class="muted">—</span>'}</td>
+        <td>
+          <button class="small" data-edit-student="${s.id}">Sửa</button>
+          <button class="small" data-note-student="${s.id}" title="Thêm ghi chú">📝</button>
+          <button class="small danger" data-del-student="${s.id}">Xoá</button>
+        </td>
+      </tr>`;
+    });
+    html += '</tbody></table>';
+    listEl.innerHTML = html;
+  }
+
+  document.getElementById('btnAddStudent').addEventListener('click', ()=>openStudentModal(cls));
+  document.getElementById('btnImportExcel').addEventListener('click', ()=>document.getElementById('fileImport').click());
+  document.getElementById('fileImport').addEventListener('change', e=>handleImportExcel(e, cls));
+  document.getElementById('btnClearStudents').addEventListener('click', ()=>{
+    if(cls.students.length===0) return;
+    if(confirm('Xoá toàn bộ học sinh trong lớp này? Điểm số liên quan cũng sẽ mất.')){
+      cls.students = [];
+      cls.scores = {};
+      saveState(); renderAll();
+    }
+  });
+  listEl.querySelectorAll('[data-edit-student]').forEach(btn=>{
+    btn.addEventListener('click', ()=>openStudentModal(cls, cls.students.find(s=>s.id===btn.dataset.editStudent)));
+  });
+  listEl.querySelectorAll('[data-note-student]').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      notesUI.studentId = btn.dataset.noteStudent;
+      activeTab = 'notes';
+      renderAll();
+    });
+  });
+  listEl.querySelectorAll('[data-del-student]').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      if(confirm('Xoá học sinh này?')){
+        cls.students = cls.students.filter(s=>s.id!==btn.dataset.delStudent);
+        delete cls.scores[btn.dataset.delStudent];
+        saveState(); renderAll();
+      }
+    });
+  });
+}
+
+function openStudentModal(cls, student){
+  openModal({
+    title: student ? 'Sửa thông tin học sinh' : 'Thêm học sinh',
+    fields:[
+      {name:'name', label:'Họ và tên', type:'text', value: student?.name || ''},
+      {name:'gender', label:'Giới tính', type:'select', options:['','Nam','Nữ'], value: student?.gender || ''},
+      {name:'dob', label:'Ngày sinh', type:'date', value: student?.dob || ''},
+      {name:'parentPhone', label:'SĐT phụ huynh', type:'text', value: student?.parentPhone || '', placeholder:'VD: 0912345678'}
+    ],
+    onSubmit(values){
+      if(!values.name || !values.name.trim()) return alert('Vui lòng nhập họ tên');
+      if(student){
+        student.name = values.name.trim();
+        student.gender = values.gender;
+        student.dob = values.dob;
+        student.parentPhone = values.parentPhone.trim();
+      } else {
+        cls.students.push({ id: uid(), name: values.name.trim(), gender: values.gender, dob: values.dob, parentPhone: values.parentPhone.trim() });
+      }
+      saveState(); renderAll();
+    }
+  });
+}
+
+function handleImportExcel(e, cls){
+  const file = e.target.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = evt => {
+    try{
+      const data = new Uint8Array(evt.target.result);
+      const wb = XLSX.read(data, {type:'array'});
+      const sheet = wb.Sheets[wb.SheetNames[0]];
+      const rows = XLSX.utils.sheet_to_json(sheet, {header:1, defval:''});
+      if(!rows.length){ alert('File rỗng.'); return; }
+
+      // Tìm cột tên & giới tính & ngày sinh & SĐT phụ huynh dựa trên header dòng đầu
+      let headerRowIdx = 0;
+      let nameCol = -1, genderCol=-1, dobCol=-1, phoneCol=-1;
+      const header = rows[0].map(h=>String(h).toLowerCase());
+      header.forEach((h,i)=>{
+        if(nameCol===-1 && (h.includes('tên') || h.includes('ten') || h.includes('name'))) nameCol=i;
+        if(genderCol===-1 && (h.includes('giới tính')||h.includes('gioi tinh')||h.includes('gender'))) genderCol=i;
+        if(dobCol===-1 && (h.includes('ngày sinh')||h.includes('ngay sinh')||h.includes('dob')||h.includes('birth'))) dobCol=i;
+        if(phoneCol===-1 && (h.includes('phụ huynh')||h.includes('phu huynh')||h.includes('sđt')||h.includes('sdt')||h.includes('điện thoại')||h.includes('dien thoai')||h.includes('phone'))) phoneCol=i;
+      });
+      let startRow = 1;
+      if(nameCol===-1){
+        // Không tìm thấy header rõ ràng -> dùng cột đầu tiên có chữ, bắt đầu từ dòng 0
+        nameCol = 0;
+        startRow = 0;
+      }
+
+      let added = 0;
+      for(let r=startRow; r<rows.length; r++){
+        const row = rows[r];
+        const rawName = row[nameCol];
+        const name = rawName!==undefined ? String(rawName).trim() : '';
+        if(!name) continue;
+        // Bỏ qua nếu dòng trông giống header lặp lại hoặc là số STT thuần
+        if(/^(stt|số\s*tt|họ và tên|ho va ten|name)$/i.test(name)) continue;
+        cls.students.push({
+          id: uid(),
+          name,
+          gender: genderCol>=0 ? String(row[genderCol]||'').trim() : '',
+          dob: dobCol>=0 ? String(row[dobCol]||'').trim() : '',
+          parentPhone: phoneCol>=0 ? String(row[phoneCol]||'').trim() : ''
+        });
+        added++;
+      }
+      saveState(); renderAll();
+      alert(`Đã nhập ${added} học sinh từ file Excel.`);
+    }catch(err){
+      console.error(err);
+      alert('Không đọc được file. Vui lòng kiểm tra định dạng file Excel.');
+    } finally {
+      e.target.value = '';
+    }
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+/* ===================== TAB: MÔN HỌC ===================== */
+function renderSubjectsTab(main, cls){
+  main.innerHTML = `
+  <div class="card">
+    <div class="row between">
+      <h2>📘 Môn học — ${escapeHtml(cls.name)}</h2>
+      <div class="row">
+        <button class="primary" id="btnAddSubject">+ Thêm môn</button>
+        <button id="btnResetSubjects">Dùng danh sách mẫu</button>
+      </div>
+    </div>
+    <p class="muted">Xếp loại (theo Thông tư 22/2021) hiện tính các môn với trọng số ngang nhau.</p>
+    <div id="subjectsList"></div>
+  </div>`;
+
+  const listEl = document.getElementById('subjectsList');
+  if(cls.subjects.length===0){
+    listEl.innerHTML = `<div class="empty"><div class="big">📘</div>Chưa có môn học nào.</div>`;
+  } else {
+    listEl.innerHTML = cls.subjects.map(s=>`
+      <div class="chip" style="font-size:13px;padding:7px 12px;">
+        ${escapeHtml(s.name)} <button data-del-subject="${s.id}" title="Xoá môn">✕</button>
+      </div>`).join('');
+  }
+
+  document.getElementById('btnAddSubject').addEventListener('click', ()=>{
+    openModal({
+      title:'Thêm môn học',
+      fields:[{name:'name', label:'Tên môn học', type:'text'}],
+      onSubmit(values){
+        if(!values.name || !values.name.trim()) return alert('Vui lòng nhập tên môn');
+        cls.subjects.push({id:uid(), name: values.name.trim()});
+        saveState(); renderAll();
+      }
+    });
+  });
+
+  document.getElementById('btnResetSubjects').addEventListener('click', ()=>{
+    if(confirm('Thêm danh sách môn học mẫu (các môn đã có sẽ được giữ nguyên, không trùng lặp)?')){
+      const existing = new Set(cls.subjects.map(s=>s.name));
+      DEFAULT_SUBJECTS.forEach(n=>{ if(!existing.has(n)) cls.subjects.push({id:uid(), name:n}); });
+      saveState(); renderAll();
+    }
+  });
+
+  listEl.querySelectorAll('[data-del-subject]').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      if(confirm('Xoá môn học này? Điểm số của môn này ở tất cả học sinh sẽ bị xoá.')){
+        const sid = btn.dataset.delSubject;
+        cls.subjects = cls.subjects.filter(s=>s.id!==sid);
+        Object.values(cls.scores).forEach(byStudent=>{ delete byStudent[sid]; });
+        saveState(); renderAll();
+      }
+    });
+  });
+}
+
+/* ===================== TAB: NHẬP ĐIỂM ===================== */
+let scoresUI = { subjectId:null, semester:'hk1' };
+
+function renderScoresTab(main, cls){
+  if(cls.subjects.length===0 || cls.students.length===0){
+    main.innerHTML = `<div class="card empty"><div class="big">✏️</div>Cần có ít nhất 1 môn học và 1 học sinh trước khi nhập điểm.<br><span class="muted">Vào tab "Học sinh" và "Môn học" để thêm.</span></div>`;
+    return;
+  }
+  if(!scoresUI.subjectId || !cls.subjects.find(s=>s.id===scoresUI.subjectId)){
+    scoresUI.subjectId = cls.subjects[0].id;
+  }
+
+  main.innerHTML = `
+  <div class="card">
+    <div class="row between">
+      <h2>✏️ Nhập điểm</h2>
+      <div class="row">
+        <select id="subjectSelect"></select>
+        <select id="semesterSelect">
+          <option value="hk1">Học kỳ I</option>
+          <option value="hk2">Học kỳ II</option>
+        </select>
+      </div>
+    </div>
+    <div class="row" style="margin-bottom:10px;">
+      <button class="small" id="addTxCol">+ Cột miệng/15 phút</button>
+      <button class="small" id="addGkCol">+ Cột 1 tiết</button>
+      <span class="muted">Điểm miệng/15p: hệ số 1 · Điểm 1 tiết: hệ số 2 · Điểm học kỳ: hệ số 3</span>
+    </div>
+    <div style="overflow-x:auto;">
+      <div id="scoresTableWrap"></div>
+    </div>
+  </div>`;
+
+  const subjectSelect = document.getElementById('subjectSelect');
+  cls.subjects.forEach(s=>{
+    const opt = document.createElement('option');
+    opt.value = s.id; opt.textContent = s.name;
+    if(s.id===scoresUI.subjectId) opt.selected=true;
+    subjectSelect.appendChild(opt);
+  });
+  document.getElementById('semesterSelect').value = scoresUI.semester;
+
+  subjectSelect.addEventListener('change', e=>{ scoresUI.subjectId=e.target.value; renderScoreTable(cls); });
+  document.getElementById('semesterSelect').addEventListener('change', e=>{ scoresUI.semester=e.target.value; renderScoreTable(cls); });
+  document.getElementById('addTxCol').addEventListener('click', ()=>{
+    const cc = getColCounts(cls, scoresUI.subjectId, scoresUI.semester);
+    if(cc.tx<8){ cc.tx++; saveState(); renderScoreTable(cls); }
+  });
+  document.getElementById('addGkCol').addEventListener('click', ()=>{
+    const cc = getColCounts(cls, scoresUI.subjectId, scoresUI.semester);
+    if(cc.gk<4){ cc.gk++; saveState(); renderScoreTable(cls); }
+  });
+
+  renderScoreTable(cls);
+}
+
+function renderScoreTable(cls){
+  const wrap = document.getElementById('scoresTableWrap');
+  const subjectId = scoresUI.subjectId, semester = scoresUI.semester;
+  const cc = getColCounts(cls, subjectId, semester);
+
+  let head = '<tr><th style="width:40px;">STT</th><th class="name-cell">Họ và tên</th>';
+  for(let i=0;i<cc.tx;i++) head += `<th style="width:60px;">M/15p ${i+1} <button class="small" style="padding:0 4px;" data-remove-col="tx:${i}" title="Xoá cột">✕</button></th>`;
+  for(let i=0;i<cc.gk;i++) head += `<th style="width:60px;">1 tiết ${i+1} <button class="small" style="padding:0 4px;" data-remove-col="gk:${i}" title="Xoá cột">✕</button></th>`;
+  head += '<th style="width:70px;">Học kỳ</th><th style="width:70px;">TB môn</th><th style="min-width:220px;">Nhận xét môn</th></tr>';
+
+  let body = '';
+  cls.students.forEach((s,idx)=>{
+    const entry = getScoreEntry(cls, s.id, subjectId, semester);
+    body += `<tr><td>${idx+1}</td><td class="name-cell">${escapeHtml(s.name)}</td>`;
+    for(let i=0;i<cc.tx;i++){
+      const v = entry.tx[i] ?? '';
+      body += `<td><input type="number" min="0" max="10" step="0.1" value="${v}" data-student="${s.id}" data-type="tx" data-idx="${i}"></td>`;
+    }
+    for(let i=0;i<cc.gk;i++){
+      const v = entry.gk[i] ?? '';
+      body += `<td><input type="number" min="0" max="10" step="0.1" value="${v}" data-student="${s.id}" data-type="gk" data-idx="${i}"></td>`;
+    }
+    const ckv = entry.ck[0] ?? '';
+    body += `<td><input type="number" min="0" max="10" step="0.1" value="${ckv}" data-student="${s.id}" data-type="ck" data-idx="0"></td>`;
+    const tb = calcTBMonHK(entry);
+    const subjComment = getSubjectComment(cls, s.id, subjectId, semester, tb, null);
+    body += `<td><strong>${tb===null?'—':tb.toFixed(1)}</strong></td>`;
+    body += `<td style="text-align:left;font-size:12px;">
+        <div style="display:flex;gap:4px;align-items:flex-start;">
+          <span style="flex:1;">${escapeHtml(subjComment)}</span>
+          <button class="small" style="flex-shrink:0;" data-edit-subj-comment="${s.id}" title="Sửa nhận xét">✎</button>
+        </div>
+      </td></tr>`;
+  });
+
+  wrap.innerHTML = `<table><thead>${head}</thead><tbody>${body}</tbody></table>`;
+
+  wrap.querySelectorAll('[data-edit-subj-comment]').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      const studentId = btn.dataset.editSubjComment;
+      const student = cls.students.find(s=>s.id===studentId);
+      const entry = getScoreEntry(cls, studentId, subjectId, semester);
+      const tb = calcTBMonHK(entry);
+      openSubjectCommentModal(cls, student, subjectId, semester, tb, null, ()=>renderScoreTable(cls));
+    });
+  });
+
+  wrap.querySelectorAll('input').forEach(inp=>{
+    inp.addEventListener('change', ()=>{
+      const studentId = inp.dataset.student, type = inp.dataset.type, idx = Number(inp.dataset.idx);
+      const entry = getScoreEntry(cls, studentId, subjectId, semester);
+      let val = inp.value === '' ? null : Number(inp.value);
+      if(val!==null && (isNaN(val) || val<0 || val>10)){
+        alert('Điểm phải trong khoảng 0 - 10');
+        inp.value = entry[type][idx] ?? '';
+        return;
+      }
+      entry[type][idx] = val;
+      saveState();
+      renderScoreTable(cls);
+    });
+  });
+
+  wrap.querySelectorAll('[data-remove-col]').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      const [type, idxStr] = btn.dataset.removeCol.split(':');
+      const idx = Number(idxStr);
+      // Kiểm tra xem cột có dữ liệu ở học sinh nào không
+      const hasData = cls.students.some(s=>{
+        const e = getScoreEntry(cls, s.id, subjectId, semester);
+        return e[type][idx] !== null && e[type][idx] !== undefined && e[type][idx] !== '';
+      });
+      if(hasData && !confirm('Cột này đang có điểm, xoá sẽ mất dữ liệu. Tiếp tục?')) return;
+      cls.students.forEach(s=>{
+        const e = getScoreEntry(cls, s.id, subjectId, semester);
+        e[type].splice(idx,1);
+      });
+      cc[type] = Math.max(type==='ck'?1:1, cc[type]-1);
+      saveState();
+      renderScoreTable(cls);
+    });
+  });
+}
+
+/* ===================== TAB: TỔNG HỢP & XẾP LOẠI ===================== */
+let summaryUI = { mode:'nam' };
+
+function renderSummaryTab(main, cls){
+  main.innerHTML = `
+  <div class="card">
+    <div class="row between">
+      <h2>📋 Bảng tổng hợp & Xếp loại</h2>
+      <div class="row">
+        <select id="modeSelect">
+          <option value="hk1">Học kỳ I</option>
+          <option value="hk2">Học kỳ II</option>
+          <option value="nam">Cả năm</option>
+        </select>
+        <label style="display:flex;align-items:center;gap:6px;font-size:13px;font-weight:500;cursor:pointer;">
+          <input type="checkbox" id="chkSubjComments"> Kèm nhận xét từng môn
+        </label>
+        <button id="btnExportSummary">📤 Xuất Excel</button>
+      </div>
+    </div>
+    <div id="statBoxes" class="stat-grid"></div>
+    <div style="overflow-x:auto;"><div id="summaryTableWrap"></div></div>
+  </div>`;
+
+  document.getElementById('modeSelect').value = summaryUI.mode;
+  document.getElementById('modeSelect').addEventListener('change', e=>{ summaryUI.mode=e.target.value; renderSummaryTable(cls); });
+  document.getElementById('btnExportSummary').addEventListener('click', ()=>{
+    const includeSubj = document.getElementById('chkSubjComments').checked;
+    exportSummaryExcel(cls, includeSubj);
+  });
+
+  renderSummaryTable(cls);
+}
+
+function renderSummaryTable(cls){
+  const mode = summaryUI.mode;
+  const statBoxes = document.getElementById('statBoxes');
+  const wrap = document.getElementById('summaryTableWrap');
+
+  if(cls.students.length===0 || cls.subjects.length===0){
+    statBoxes.innerHTML='';
+    wrap.innerHTML = `<div class="empty">Chưa có đủ dữ liệu học sinh / môn học.</div>`;
+    return;
+  }
+
+  const counts = {tot:0,kha:0,dat:0,chuadat:0,none:0};
+  const rows = cls.students.map((s,idx)=>{
+    const subjAvgs = getStudentSubjectAverages(cls, s.id, mode);
+    const overall = calcOverall(subjAvgs);
+    const label = classify(overall, state.thresholds);
+    counts[label]++;
+    return {student:s, idx, subjAvgs, overall, label};
+  });
+
+  statBoxes.innerHTML = `
+    <div class="stat-box"><div class="num" style="color:var(--good)">${counts.tot}</div><div class="lbl">Tốt</div></div>
+    <div class="stat-box"><div class="num" style="color:var(--khaC)">${counts.kha}</div><div class="lbl">Khá</div></div>
+    <div class="stat-box"><div class="num" style="color:var(--dat)">${counts.dat}</div><div class="lbl">Đạt</div></div>
+    <div class="stat-box"><div class="num" style="color:var(--bad)">${counts.chuadat}</div><div class="lbl">Chưa đạt</div></div>
+    <div class="stat-box"><div class="num" style="color:#94a3b8">${counts.none}</div><div class="lbl">Chưa có điểm</div></div>
+  `;
+
+  let head = '<tr><th style="width:40px;">STT</th><th class="name-cell">Họ và tên</th>';
+  cls.subjects.forEach(s=> head += `<th>${escapeHtml(s.name)}</th>`);
+  head += '<th style="width:60px;">ĐTB</th><th style="width:90px;">Xếp loại</th><th class="name-cell" style="min-width:220px;">Nhận xét</th><th style="width:70px;">Chi tiết</th></tr>';
+
+  let body = '';
+  rows.forEach(r=>{
+    body += `<tr><td>${r.idx+1}</td><td class="name-cell">${escapeHtml(r.student.name)}</td>`;
+    cls.subjects.forEach(sub=>{
+      const v = r.subjAvgs[sub.id];
+      body += `<td>${v===null||v===undefined?'—':v.toFixed(1)}</td>`;
+    });
+    body += `<td><strong>${r.overall.dtb===null?'—':r.overall.dtb.toFixed(1)}</strong></td>`;
+    body += `<td><span class="tag ${CLASSIFY_CLASS[r.label]}">${CLASSIFY_LABEL[r.label]}</span></td>`;
+    const comment = getComment(cls, r.student, mode);
+    body += `<td class="name-cell" style="text-align:left;">${escapeHtml(comment)}</td>`;
+    body += `<td><button class="small" data-detail="${r.student.id}">Xem</button></td>`;
+    body += '</tr>';
+  });
+
+  wrap.innerHTML = `<table><thead>${head}</thead><tbody>${body}</tbody></table>`;
+  wrap.querySelectorAll('[data-detail]').forEach(btn=>{
+    btn.addEventListener('click', ()=>openStudentDetail(cls, btn.dataset.detail, mode));
+  });
+}
+
+function exportSummaryExcel(cls, includeSubjComments){
+  const mode = summaryUI.mode;
+  const modeLabel = mode==='hk1'?'Học kỳ I': mode==='hk2'?'Học kỳ II':'Cả năm';
+  const data = cls.students.map((s,idx)=>{
+    const subjAvgs = getStudentSubjectAverages(cls, s.id, mode);
+    const overall = calcOverall(subjAvgs);
+    const label = classify(overall, state.thresholds);
+    const row = { 'STT': idx+1, 'Họ và tên': s.name };
+    cls.subjects.forEach(sub=>{
+      row[sub.name] = subjAvgs[sub.id]===null?'':subjAvgs[sub.id];
+      if(includeSubjComments){
+        let trend = null;
+        if(mode==='nam'){
+          const tb1 = calcTBMonHK(getScoreEntry(cls, s.id, sub.id, 'hk1'));
+          const tb2 = calcTBMonHK(getScoreEntry(cls, s.id, sub.id, 'hk2'));
+          if(tb1!==null && tb2!==null) trend = tb2-tb1;
+        }
+        row['NX '+sub.name] = getSubjectComment(cls, s.id, sub.id, mode, subjAvgs[sub.id], trend);
+      }
+    });
+    row['ĐTB'] = overall.dtb===null?'':overall.dtb;
+    row['Xếp loại'] = CLASSIFY_LABEL[label];
+    row['Nhận xét'] = getComment(cls, s, mode);
+    return row;
+  });
+  const ws = XLSX.utils.json_to_sheet(data);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, modeLabel.replace(/[\\/?*[\]]/g,''));
+  XLSX.writeFile(wb, `TongHop_${cls.name}_${modeLabel}.xlsx`);
+}
+
+/* ===================== TAB: TỔNG KẾT NĂM ===================== */
+function renderYearlyTab(main, cls){
+  if(cls.students.length===0 || cls.subjects.length===0){
+    main.innerHTML = `<div class="card empty">Chưa có đủ dữ liệu để tổng kết năm.</div>`;
+    return;
+  }
+  const rows = cls.students.map((s,idx)=>{
+    const avgNam = getStudentSubjectAverages(cls, s.id, 'nam');
+    const overall = calcOverall(avgNam);
+    const label = classify(overall, state.thresholds);
+    return {student:s, idx, overall, label};
+  }).sort((a,b)=> (b.overall.dtb ?? -1) - (a.overall.dtb ?? -1));
+
+  const counts = {tot:0,kha:0,dat:0,chuadat:0,none:0};
+  rows.forEach(r=>counts[r.label]++);
+
+  let body = '';
+  rows.forEach((r,rank)=>{
+    body += `<tr><td>${r.overall.dtb!==null?rank+1:'—'}</td><td class="name-cell">${escapeHtml(r.student.name)}</td>
+      <td><strong>${r.overall.dtb===null?'—':r.overall.dtb.toFixed(1)}</strong></td>
+      <td><span class="tag ${CLASSIFY_CLASS[r.label]}">${CLASSIFY_LABEL[r.label]}</span></td>
+      <td><button class="small" data-print="${r.student.id}">🖨️ In phiếu</button></td></tr>`;
+  });
+
+  main.innerHTML = `
+  <div class="card">
+    <h2>🏁 Tổng kết cả năm — ${escapeHtml(cls.name)}</h2>
+    <div class="stat-grid">
+      <div class="stat-box"><div class="num" style="color:var(--good)">${counts.tot}</div><div class="lbl">Tốt</div></div>
+      <div class="stat-box"><div class="num" style="color:var(--khaC)">${counts.kha}</div><div class="lbl">Khá</div></div>
+      <div class="stat-box"><div class="num" style="color:var(--dat)">${counts.dat}</div><div class="lbl">Đạt</div></div>
+      <div class="stat-box"><div class="num" style="color:var(--bad)">${counts.chuadat}</div><div class="lbl">Chưa đạt</div></div>
+      <div class="stat-box"><div class="num" style="color:#94a3b8">${counts.none}</div><div class="lbl">Chưa có điểm</div></div>
+    </div>
+    <p class="muted">ĐTB cả năm = (ĐTB học kỳ I + 2 × ĐTB học kỳ II) / 3. Xếp hạng theo ĐTB cả năm giảm dần.</p>
+    <div style="overflow-x:auto;">
+      <table><thead><tr><th style="width:60px;">Hạng</th><th class="name-cell">Họ và tên</th><th style="width:70px;">ĐTB năm</th><th style="width:100px;">Xếp loại</th><th style="width:110px;">In phiếu</th></tr></thead>
+      <tbody>${body}</tbody></table>
+    </div>
+  </div>`;
+
+  main.querySelectorAll('[data-print]').forEach(btn=>{
+    btn.addEventListener('click', ()=>printReportCard(cls, btn.dataset.print));
+  });
+}
+
+/* ===================== TAB: BIỂU ĐỒ XU HƯỚNG ĐIỂM ===================== */
+let chartUI = { studentId:null, subjectId:null };
+
+function renderChartTab(main, cls){
+  if(cls.students.length===0 || cls.subjects.length===0){
+    main.innerHTML = `<div class="card empty"><div class="big">📈</div>Cần có ít nhất 1 học sinh và 1 môn học để xem biểu đồ.</div>`;
+    return;
+  }
+  if(!chartUI.studentId || !cls.students.find(s=>s.id===chartUI.studentId)) chartUI.studentId = cls.students[0].id;
+  if(!chartUI.subjectId || !cls.subjects.find(s=>s.id===chartUI.subjectId)) chartUI.subjectId = cls.subjects[0].id;
+
+  main.innerHTML = `
+  <div class="card">
+    <div class="row between">
+      <h2>📈 Biểu đồ xu hướng điểm theo từng đợt</h2>
+      <div class="row">
+        <select id="chartStudentSelect"></select>
+        <select id="chartSubjectSelect"></select>
+      </div>
+    </div>
+    <p class="muted">Thể hiện toàn bộ các đầu điểm đã nhập (miệng/15 phút, 1 tiết, học kỳ) theo đúng trình tự thời gian từ Học kỳ I đến Học kỳ II.</p>
+    <div id="chartSummary" class="stat-grid"></div>
+    <div id="chartWrap" style="overflow-x:auto;padding:8px 0;"></div>
+  </div>`;
+
+  const studentSelect = document.getElementById('chartStudentSelect');
+  cls.students.forEach(s=>{
+    const opt = document.createElement('option');
+    opt.value = s.id; opt.textContent = s.name;
+    if(s.id===chartUI.studentId) opt.selected = true;
+    studentSelect.appendChild(opt);
+  });
+  const subjectSelect = document.getElementById('chartSubjectSelect');
+  cls.subjects.forEach(s=>{
+    const opt = document.createElement('option');
+    opt.value = s.id; opt.textContent = s.name;
+    if(s.id===chartUI.subjectId) opt.selected = true;
+    subjectSelect.appendChild(opt);
+  });
+
+  studentSelect.addEventListener('change', e=>{ chartUI.studentId = e.target.value; renderChartBody(cls); });
+  subjectSelect.addEventListener('change', e=>{ chartUI.subjectId = e.target.value; renderChartBody(cls); });
+
+  renderChartBody(cls);
+}
+
+function renderChartBody(cls){
+  const summaryEl = document.getElementById('chartSummary');
+  const wrap = document.getElementById('chartWrap');
+  const { studentId, subjectId } = chartUI;
+
+  const e1 = getScoreEntry(cls, studentId, subjectId, 'hk1');
+  const e2 = getScoreEntry(cls, studentId, subjectId, 'hk2');
+  const tb1 = calcTBMonHK(e1), tb2 = calcTBMonHK(e2);
+  const tbNam = calcTBMonNam(tb1, tb2);
+
+  summaryEl.innerHTML = `
+    <div class="stat-box"><div class="num">${tb1===null?'—':tb1.toFixed(1)}</div><div class="lbl">TB Học kỳ I</div></div>
+    <div class="stat-box"><div class="num">${tb2===null?'—':tb2.toFixed(1)}</div><div class="lbl">TB Học kỳ II</div></div>
+    <div class="stat-box"><div class="num">${tbNam===null?'—':tbNam.toFixed(1)}</div><div class="lbl">TB Cả năm</div></div>
+  `;
+
+  const points = getSubjectTrendPoints(cls, studentId, subjectId);
+  wrap.innerHTML = renderTrendSVG(points);
+}
+
+/* ===================== TAB: HỌC SINH CẦN CHÚ Ý ===================== */
+let watchlistUI = { mode:'nam' };
+
+function renderWatchlistTab(main, cls){
+  if(cls.students.length===0 || cls.subjects.length===0){
+    main.innerHTML = `<div class="card empty"><div class="big">⚠️</div>Cần có dữ liệu học sinh / môn học / điểm để đánh giá.</div>`;
+    return;
+  }
+  main.innerHTML = `
+  <div class="card">
+    <div class="row between">
+      <h2>⚠️ Học sinh cần chú ý</h2>
+      <select id="watchModeSelect">
+        <option value="hk1">Học kỳ I</option>
+        <option value="hk2">Học kỳ II</option>
+        <option value="nam">Cả năm</option>
+      </select>
+    </div>
+    <p class="muted">Tự động lọc học sinh: xếp loại Chưa đạt, có môn dưới ${state.thresholds.watch.weakSubject} điểm, hoặc giảm từ ${state.thresholds.watch.declineDrop} điểm trở lên giữa HK I và HK II. Có thể chỉnh ngưỡng ở mục Cài đặt.</p>
+    <div id="watchStat" class="stat-grid"></div>
+    <div id="watchListWrap"></div>
+  </div>`;
+
+  document.getElementById('watchModeSelect').value = watchlistUI.mode;
+  document.getElementById('watchModeSelect').addEventListener('change', e=>{ watchlistUI.mode = e.target.value; renderWatchlistBody(cls); });
+  renderWatchlistBody(cls);
+}
+
+function renderWatchlistBody(cls){
+  const mode = watchlistUI.mode;
+  const list = computeWatchlist(cls, mode);
+  const statEl = document.getElementById('watchStat');
+  const wrap = document.getElementById('watchListWrap');
+
+  statEl.innerHTML = `
+    <div class="stat-box"><div class="num" style="color:var(--bad)">${list.length}</div><div class="lbl">Học sinh cần chú ý</div></div>
+    <div class="stat-box"><div class="num">${cls.students.length}</div><div class="lbl">Tổng số học sinh</div></div>
+  `;
+
+  if(list.length===0){
+    wrap.innerHTML = `<div class="empty"><div class="big">✅</div>Không có học sinh nào cần chú ý đặc biệt trong giai đoạn này.</div>`;
+    return;
+  }
+
+  wrap.innerHTML = list.map(item=>`
+    <div class="card" style="margin-bottom:10px;border-left:4px solid var(--bad);">
+      <div class="row between">
+        <div>
+          <strong>${escapeHtml(item.student.name)}</strong>
+          <span class="tag ${CLASSIFY_CLASS[item.label]}" style="margin-left:8px;">${CLASSIFY_LABEL[item.label]}</span>
+          ${item.overall.dtb!==null ? `<span class="muted"> · ĐTB: ${item.overall.dtb.toFixed(1)}</span>` : ''}
+        </div>
+        <div class="row">
+          <button class="small" data-watch-detail="${item.student.id}">Xem chi tiết</button>
+          <button class="small primary" data-watch-msg="${item.student.id}">✉️ Soạn tin nhắn</button>
+        </div>
+      </div>
+      <ul style="margin:8px 0 0;padding-left:18px;font-size:13px;color:var(--text);">
+        ${item.reasons.map(r=>`<li>${escapeHtml(r)}</li>`).join('')}
+      </ul>
+    </div>
+  `).join('');
+
+  wrap.querySelectorAll('[data-watch-detail]').forEach(btn=>{
+    btn.addEventListener('click', ()=>openStudentDetail(cls, btn.dataset.watchDetail, mode));
+  });
+  wrap.querySelectorAll('[data-watch-msg]').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      const student = cls.students.find(s=>s.id===btn.dataset.watchMsg);
+      openParentMessageModal(cls, student, mode);
+    });
+  });
+}
+
+/* ===================== TAB: TIẾN BỘ / XUẤT SẮC ===================== */
+let progressUI = { mode:'nam' };
+
+function renderProgressTab(main, cls){
+  if(cls.students.length===0 || cls.subjects.length===0){
+    main.innerHTML = `<div class="card empty"><div class="big">🌟</div>Cần có dữ liệu học sinh / môn học / điểm để đánh giá.</div>`;
+    return;
+  }
+  main.innerHTML = `
+  <div class="card">
+    <div class="row between">
+      <h2>🌟 Học sinh tiến bộ / xuất sắc</h2>
+      <select id="progModeSelect">
+        <option value="hk1">Học kỳ I</option>
+        <option value="hk2">Học kỳ II</option>
+        <option value="nam">Cả năm</option>
+      </select>
+    </div>
+    <p class="muted">Tự động phát hiện học sinh tiến bộ vượt bậc (tăng từ ${state.thresholds.progress.riseImprove} điểm trở lên giữa HK I và HK II), có môn đạt điểm xuất sắc (từ ${state.thresholds.progress.excellentSubject} điểm), hoặc xếp loại Tốt. Có thể chỉnh ngưỡng ở mục Cài đặt.</p>
+    <div id="progListWrap"></div>
+  </div>
+  <div class="card">
+    <h2>🎯 Cận kề lên hạng tiếp theo</h2>
+    <p class="muted">Học sinh chỉ còn cách hạng tiếp theo trong vòng ${state.thresholds.progress.nearPromoteGap} điểm ĐTB.</p>
+    <div id="nearPromoWrap"></div>
+  </div>`;
+
+  document.getElementById('progModeSelect').value = progressUI.mode;
+  document.getElementById('progModeSelect').addEventListener('change', e=>{ progressUI.mode = e.target.value; renderProgressBody(cls); });
+  renderProgressBody(cls);
+}
+
+function renderProgressBody(cls){
+  const mode = progressUI.mode;
+  const list = computeProgressList(cls, mode);
+  const wrap = document.getElementById('progListWrap');
+
+  if(list.length===0){
+    wrap.innerHTML = `<div class="empty"><div class="big">🙂</div>Chưa có học sinh nổi bật trong giai đoạn này.</div>`;
+  } else {
+    wrap.innerHTML = list.map(item=>`
+      <div class="card" style="margin-bottom:10px;border-left:4px solid var(--good);">
+        <div class="row between">
+          <div>
+            <strong>${escapeHtml(item.student.name)}</strong>
+            <span class="tag ${CLASSIFY_CLASS[item.label]}" style="margin-left:8px;">${CLASSIFY_LABEL[item.label]}</span>
+            ${item.overall.dtb!==null ? `<span class="muted"> · ĐTB: ${item.overall.dtb.toFixed(1)}</span>` : ''}
+          </div>
+          <div class="row">
+            <button class="small primary" data-prog-msg="${item.student.id}">✉️ Lời khen</button>
+            <button class="small" data-prog-cert="${item.student.id}">🏆 In giấy khen</button>
+          </div>
+        </div>
+        <ul style="margin:8px 0 0;padding-left:18px;font-size:13px;color:var(--text);">
+          ${item.reasons.map(r=>`<li>${escapeHtml(r)}</li>`).join('')}
+        </ul>
+      </div>
+    `).join('');
+    wrap.querySelectorAll('[data-prog-msg]').forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        const item = list.find(x=>x.student.id===btn.dataset.progMsg);
+        openPraiseMessageModal(cls, item.student, mode, item.reasons);
+      });
+    });
+    wrap.querySelectorAll('[data-prog-cert]').forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        const item = list.find(x=>x.student.id===btn.dataset.progCert);
+        printCertificate(cls, item.student.id, item.reasons.join('; '));
+      });
+    });
+  }
+
+  const nearWrap = document.getElementById('nearPromoWrap');
+  const nearList = computeNearPromotion(cls, mode);
+  if(nearList.length===0){
+    nearWrap.innerHTML = `<div class="empty">Không có học sinh nào cận kề lên hạng.</div>`;
+  } else {
+    nearWrap.innerHTML = nearList.map(item=>`
+      <div class="card" style="margin-bottom:10px;border-left:4px solid var(--khaC);">
+        <div class="row between">
+          <div>
+            <strong>${escapeHtml(item.student.name)}</strong>
+            <span class="muted"> · ĐTB ${item.overall.dtb.toFixed(1)} — còn thiếu ${item.gap.toFixed(1)} điểm để đạt loại ${CLASSIFY_LABEL[item.toLabel]}</span>
+            ${!item.minOk ? `<span class="muted"> (cần cải thiện thêm môn điểm thấp nhất)</span>` : ''}
+          </div>
+          <button class="small primary" data-near-msg="${item.student.id}">✉️ Động viên</button>
+        </div>
+      </div>
+    `).join('');
+    nearWrap.querySelectorAll('[data-near-msg]').forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        const item = nearList.find(x=>x.student.id===btn.dataset.nearMsg);
+        openPraiseMessageModal(cls, item.student, mode, ['Chỉ còn thiếu '+item.gap.toFixed(1)+' điểm để đạt loại '+CLASSIFY_LABEL[item.toLabel]+', hãy cố gắng thêm!']);
+      });
+    });
+  }
+}
+
+function printCertificate(cls, studentId, reasonText){
+  const student = cls.students.find(s=>s.id===studentId);
+  if(!student) return;
+  const now = new Date();
+  document.getElementById('print-area').innerHTML = `
+    <div style="font-family:'Times New Roman',serif;padding:40px;text-align:center;border:8px double #b45309;">
+      <p style="letter-spacing:2px;margin:0;">TRƯỜNG ....................</p>
+      <h1 style="margin:20px 0 4px;font-size:36px;color:#b45309;">GIẤY KHEN</h1>
+      <p style="margin:0 0 24px;">Giáo viên chủ nhiệm khen tặng</p>
+      <h2 style="font-size:26px;margin:10px 0;">${escapeHtml(student.name)}</h2>
+      <p>Học sinh lớp ${escapeHtml(cls.name)}</p>
+      <p style="max-width:600px;margin:16px auto;font-size:15px;">Đã đạt thành tích: ${escapeHtml(reasonText)}</p>
+      <p style="margin-top:50px;">Ngày ${now.getDate()} tháng ${now.getMonth()+1} năm ${now.getFullYear()}</p>
+      <div style="display:flex;justify-content:flex-end;margin-top:40px;text-align:center;padding-right:60px;">
+        <div>Giáo viên chủ nhiệm<br><br><br>(Ký, ghi rõ họ tên)</div>
+      </div>
+    </div>`;
+  window.print();
+}
+
+/* ===================== TAB: TIN NHẮN PHỤ HUYNH ===================== */
+let messagesUI = { mode:'nam', onlyWatchlist:false };
+
+function renderMessagesTab(main, cls){
+  if(cls.students.length===0){
+    main.innerHTML = `<div class="card empty"><div class="big">✉️</div>Cần có học sinh trong lớp để soạn tin nhắn.</div>`;
+    return;
+  }
+  main.innerHTML = `
+  <div class="card">
+    <div class="row between">
+      <h2>✉️ Tin nhắn gửi phụ huynh</h2>
+      <div class="row">
+        <select id="msgModeSelect">
+          <option value="hk1">Học kỳ I</option>
+          <option value="hk2">Học kỳ II</option>
+          <option value="nam">Cả năm</option>
+        </select>
+        <label style="display:flex;align-items:center;gap:6px;font-size:13px;font-weight:500;cursor:pointer;">
+          <input type="checkbox" id="msgOnlyWatchlist"> Chỉ hiện học sinh cần chú ý
+        </label>
+        <button id="btnExportMessages">📤 Xuất Excel</button>
+      </div>
+    </div>
+    <p class="muted">Nội dung tin nhắn được soạn sẵn dựa trên điểm, xếp loại và nhận xét hiện tại. Nhấn "Xem/Sao chép" để sao chép và dán vào Zalo/SMS.</p>
+    <div id="msgTableWrap" style="overflow-x:auto;"></div>
+  </div>`;
+
+  document.getElementById('msgModeSelect').value = messagesUI.mode;
+  document.getElementById('msgOnlyWatchlist').checked = messagesUI.onlyWatchlist;
+  document.getElementById('msgModeSelect').addEventListener('change', e=>{ messagesUI.mode = e.target.value; renderMessagesBody(cls); });
+  document.getElementById('msgOnlyWatchlist').addEventListener('change', e=>{ messagesUI.onlyWatchlist = e.target.checked; renderMessagesBody(cls); });
+  document.getElementById('btnExportMessages').addEventListener('click', ()=>exportMessagesExcel(cls));
+
+  renderMessagesBody(cls);
+}
+
+function renderMessagesBody(cls){
+  const mode = messagesUI.mode;
+  const wrap = document.getElementById('msgTableWrap');
+
+  let studentList = cls.students;
+  if(messagesUI.onlyWatchlist){
+    const watchIds = new Set(computeWatchlist(cls, mode).map(w=>w.student.id));
+    studentList = cls.students.filter(s=>watchIds.has(s.id));
+  }
+
+  if(studentList.length===0){
+    wrap.innerHTML = `<div class="empty">Không có học sinh nào phù hợp với bộ lọc hiện tại.</div>`;
+    return;
+  }
+
+  let head = '<tr><th style="width:40px;">STT</th><th class="name-cell">Họ và tên</th><th style="width:120px;">SĐT phụ huynh</th><th style="width:90px;">Xếp loại</th><th class="name-cell" style="min-width:260px;">Xem trước nội dung</th><th style="width:130px;">Thao tác</th></tr>';
+  let body = '';
+  studentList.forEach((s,idx)=>{
+    const eff = getEffectiveClassification(cls, s.id, mode);
+    const label = eff.label;
+    const preview = generateParentMessage(cls, s, mode).replace(/\n/g,' ');
+    body += `<tr>
+      <td>${idx+1}</td>
+      <td class="name-cell">${escapeHtml(s.name)}</td>
+      <td>${escapeHtml(s.parentPhone||'')||'<span class="muted">Chưa có</span>'}</td>
+      <td><span class="tag ${CLASSIFY_CLASS[label]}">${CLASSIFY_LABEL[label]}</span></td>
+      <td class="name-cell" style="text-align:left;font-size:12px;">${escapeHtml(preview.slice(0,90))}${preview.length>90?'…':''}</td>
+      <td><button class="small primary" data-msg-view="${s.id}">Xem/Sao chép</button></td>
+    </tr>`;
+  });
+
+  wrap.innerHTML = `<table><thead>${head}</thead><tbody>${body}</tbody></table>`;
+  wrap.querySelectorAll('[data-msg-view]').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      const student = cls.students.find(s=>s.id===btn.dataset.msgView);
+      openParentMessageModal(cls, student, mode);
+    });
+  });
+}
+
+function exportMessagesExcel(cls){
+  const mode = messagesUI.mode;
+  const modeLabel = mode==='hk1'?'Học kỳ I': mode==='hk2'?'Học kỳ II':'Cả năm';
+  let studentList = cls.students;
+  if(messagesUI.onlyWatchlist){
+    const watchIds = new Set(computeWatchlist(cls, mode).map(w=>w.student.id));
+    studentList = cls.students.filter(s=>watchIds.has(s.id));
+  }
+  const data = studentList.map((s,idx)=>{
+    const eff = getEffectiveClassification(cls, s.id, mode);
+    return {
+      'STT': idx+1,
+      'Họ và tên': s.name,
+      'SĐT phụ huynh': s.parentPhone||'',
+      'ĐTB': eff.overall.dtb===null?'':eff.overall.dtb,
+      'Xếp loại': CLASSIFY_LABEL[eff.label],
+      'Nội dung tin nhắn': generateParentMessage(cls, s, mode)
+    };
+  });
+  const ws = XLSX.utils.json_to_sheet(data);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'TinNhan');
+  XLSX.writeFile(wb, `TinNhanPhuHuynh_${cls.name}_${modeLabel}.xlsx`);
+}
+
+/* ===================== TAB: NHẬT KÝ GHI CHÚ HỌC SINH ===================== */
+let notesUI = { studentId:'' };
+
+function renderNotesTab(main, cls){
+  if(cls.students.length===0){
+    main.innerHTML = `<div class="card empty"><div class="big">📝</div>Cần có học sinh trong lớp để ghi chú.</div>`;
+    return;
+  }
+  const options = cls.students.map(s=>`<option value="${s.id}">${escapeHtml(s.name)}</option>`).join('');
+  main.innerHTML = `
+  <div class="card">
+    <div class="row between">
+      <h2>📝 Nhật ký ghi chú học sinh</h2>
+      <select id="notesStudentSelect">
+        <option value="">— Tất cả học sinh —</option>
+        ${options}
+      </select>
+    </div>
+    <p class="muted">Ghi lại các mốc quan trọng, biểu hiện, hoặc nhắc nhở về từng học sinh — độc lập với điểm số — để theo dõi và động viên kịp thời.</p>
+    <div id="noteFormWrap"></div>
+    <hr style="margin:16px 0;border:none;border-top:1px solid var(--border);">
+    <div id="notesListWrap"></div>
+  </div>`;
+  document.getElementById('notesStudentSelect').value = notesUI.studentId;
+  document.getElementById('notesStudentSelect').addEventListener('change', e=>{ notesUI.studentId = e.target.value; renderNotesBody(cls); });
+  renderNotesBody(cls);
+}
+
+function renderNotesBody(cls){
+  const formWrap = document.getElementById('noteFormWrap');
+  const listWrap = document.getElementById('notesListWrap');
+  const studentId = notesUI.studentId;
+
+  if(studentId){
+    const student = cls.students.find(s=>s.id===studentId);
+    formWrap.innerHTML = `
+      <div class="grid2">
+        <div class="field"><label>Loại ghi chú</label>
+          <select id="noteTypeSelect">
+            ${Object.entries(NOTE_TYPES).map(([k,v])=>`<option value="${k}">${v}</option>`).join('')}
+          </select>
+        </div>
+        <div class="field"><label>Nội dung</label><input type="text" id="noteTextInput" placeholder="Nhập ghi chú cho ${escapeHtml(student?student.name:'')}..."></div>
+      </div>
+      <button class="primary" id="btnAddNote">+ Thêm ghi chú</button>`;
+    document.getElementById('btnAddNote').addEventListener('click', ()=>{
+      const textEl = document.getElementById('noteTextInput');
+      const text = textEl.value.trim();
+      if(!text) return alert('Vui lòng nhập nội dung ghi chú.');
+      const type = document.getElementById('noteTypeSelect').value;
+      addStudentNote(cls, studentId, text, type);
+      renderNotesBody(cls);
+    });
+  } else {
+    formWrap.innerHTML = `<p class="muted">Chọn một học sinh cụ thể để thêm ghi chú mới.</p>`;
+  }
+
+  let notes;
+  if(studentId){
+    const student = cls.students.find(s=>s.id===studentId);
+    notes = (cls.studentNotes[studentId]||[]).map(n=>Object.assign({}, n, { studentName: student?student.name:'', studentId }));
+    notes.sort((a,b)=> new Date(b.date) - new Date(a.date));
+  } else {
+    notes = getAllRecentNotes(cls);
+  }
+
+  if(notes.length===0){
+    listWrap.innerHTML = `<div class="empty"><div class="big">🗒️</div>Chưa có ghi chú nào.</div>`;
+    return;
+  }
+  listWrap.innerHTML = notes.map(n=>`
+    <div class="list-item" style="align-items:flex-start;">
+      <div>
+        <span class="chip">${NOTE_TYPES[n.type]||'Khác'}</span>
+        ${!studentId?`<strong>${escapeHtml(n.studentName)}</strong> · `:''}
+        <span class="muted">${new Date(n.date).toLocaleString('vi-VN')}</span>
+        <div>${escapeHtml(n.text)}</div>
+      </div>
+      <div class="actions"><button class="small danger" data-del-note="${n.id}" data-note-student="${n.studentId}">Xoá</button></div>
+    </div>
+  `).join('');
+  listWrap.querySelectorAll('[data-del-note]').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      if(confirm('Xoá ghi chú này?')){
+        deleteStudentNote(cls, btn.dataset.noteStudent, btn.dataset.delNote);
+        renderNotesBody(cls);
+      }
+    });
+  });
+}
+
+/* ===================== STUDENT DETAIL MODAL ===================== */
+function openStudentDetail(cls, studentId, mode){
+  const student = cls.students.find(s=>s.id===studentId);
+  if(!student) return;
+  const overlay = document.createElement('div');
+  overlay.className = 'modal-overlay';
+  const modeLabel = mode==='hk1'?'Học kỳ I':mode==='hk2'?'Học kỳ II':'Cả năm';
+
+  function buildSubjectRows(){
+    return cls.subjects.map(sub=>{
+      const e1 = getScoreEntry(cls, studentId, sub.id, 'hk1');
+      const e2 = getScoreEntry(cls, studentId, sub.id, 'hk2');
+      const tb1 = calcTBMonHK(e1), tb2 = calcTBMonHK(e2);
+      const tbNam = calcTBMonNam(tb1,tb2);
+      let tbForMode, trend=null;
+      if(mode==='hk1') tbForMode=tb1;
+      else if(mode==='hk2') tbForMode=tb2;
+      else { tbForMode=tbNam; if(tb1!==null && tb2!==null) trend=tb2-tb1; }
+      const subjComment = getSubjectComment(cls, studentId, sub.id, mode, tbForMode, trend);
+      return `<tr><td class="name-cell">${escapeHtml(sub.name)}</td>
+        <td>${tb1===null?'—':tb1.toFixed(1)}</td>
+        <td>${tb2===null?'—':tb2.toFixed(1)}</td>
+        <td><strong>${tbNam===null?'—':tbNam.toFixed(1)}</strong></td>
+        <td style="text-align:left;font-size:12px;">
+          <div style="display:flex;gap:4px;align-items:flex-start;">
+            <span style="flex:1;">${escapeHtml(subjComment)}</span>
+            <button class="small" style="flex-shrink:0;" data-edit-subj="${sub.id}" title="Sửa nhận xét">✎</button>
+          </div>
+        </td></tr>`;
+    }).join('');
+  }
+
+  function bindSubjEditButtons(){
+    overlay.querySelectorAll('[data-edit-subj]').forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        const subjectId = btn.dataset.editSubj;
+        const e1 = getScoreEntry(cls, studentId, subjectId, 'hk1');
+        const e2 = getScoreEntry(cls, studentId, subjectId, 'hk2');
+        const tb1 = calcTBMonHK(e1), tb2 = calcTBMonHK(e2);
+        let tbForMode, trend=null;
+        if(mode==='hk1') tbForMode=tb1;
+        else if(mode==='hk2') tbForMode=tb2;
+        else { tbForMode=calcTBMonNam(tb1,tb2); if(tb1!==null && tb2!==null) trend=tb2-tb1; }
+        openSubjectCommentModal(cls, student, subjectId, mode, tbForMode, trend, ()=>{
+          overlay.querySelector('#subjectRowsBody').innerHTML = buildSubjectRows();
+          bindSubjEditButtons();
+        });
+      });
+    });
+  }
+
+  const commentKey = student.id+'_'+mode;
+  const currentComment = getComment(cls, student, mode);
+
+  overlay.innerHTML = `
+    <div class="modal" style="max-width:760px;">
+      <h3>👤 ${escapeHtml(student.name)} — ${escapeHtml(cls.name)}</h3>
+      <table style="margin-bottom:14px;">
+        <thead><tr><th class="name-cell">Môn học</th><th>TB HK I</th><th>TB HK II</th><th>TB cả năm</th><th class="name-cell" style="min-width:200px;">Nhận xét môn (${escapeHtml(modeLabel)})</th></tr></thead>
+        <tbody id="subjectRowsBody">${buildSubjectRows()}</tbody>
+      </table>
+      <div class="field">
+        <label>Nhận xét chung (đang xem: ${escapeHtml(modeLabel)})</label>
+        <textarea id="commentBox">${escapeHtml(currentComment)}</textarea>
+      </div>
+      <div class="field">
+        <label>🎯 Mục tiêu cá nhân (${escapeHtml(modeLabel)})</label>
+        <div id="goalSection"></div>
+      </div>
+      <div class="modal-actions">
+        <button class="link-btn" id="btnResetComment">↺ Khôi phục nhận xét tự động</button>
+        <button id="btnCloseDetail">Đóng</button>
+        <button class="primary" id="btnSaveComment">Lưu nhận xét</button>
+      </div>
+    </div>`;
+  document.body.appendChild(overlay);
+  bindSubjEditButtons();
+  renderGoalSection();
+
+  function renderGoalSection(){
+    const goal = getGoal(cls, studentId, mode);
+    const eff = getEffectiveClassification(cls, studentId, mode);
+    const current = eff.overall.dtb;
+    let progressMsg = '';
+    if(goal){
+      if(current===null) progressMsg = 'Chưa có đủ điểm để so sánh với mục tiêu.';
+      else if(current>=goal.target) progressMsg = `<span style="color:var(--good);font-weight:600;">🎉 Đã đạt mục tiêu! (ĐTB hiện tại ${current.toFixed(1)})</span>`;
+      else progressMsg = `Còn thiếu <strong>${(goal.target-current).toFixed(1)}</strong> điểm để đạt mục tiêu (ĐTB hiện tại ${current.toFixed(1)}).`;
+    }
+    overlay.querySelector('#goalSection').innerHTML = `
+      <div class="row">
+        <input type="number" id="goalTargetInput" step="0.1" style="max-width:120px;" value="${goal?goal.target:''}" placeholder="Điểm mục tiêu">
+        <input type="text" id="goalNoteInput" placeholder="Ghi chú mục tiêu (tuỳ chọn)" value="${escapeHtml(goal ? (goal.note||'') : '')}" style="flex:1;min-width:160px;">
+        <button class="small primary" id="btnSaveGoal">Lưu</button>
+        ${goal?`<button class="small danger" id="btnClearGoal">Xoá</button>`:''}
+      </div>
+      ${progressMsg?`<p class="muted" style="margin-top:6px;">${progressMsg}</p>`:''}
+    `;
+    overlay.querySelector('#btnSaveGoal').addEventListener('click', ()=>{
+      const target = Number(overlay.querySelector('#goalTargetInput').value);
+      if(!target || target<=0) return alert('Vui lòng nhập điểm mục tiêu hợp lệ.');
+      const note = overlay.querySelector('#goalNoteInput').value.trim();
+      setGoal(cls, studentId, mode, target, note);
+      renderGoalSection();
+    });
+    const clearBtn = overlay.querySelector('#btnClearGoal');
+    if(clearBtn) clearBtn.addEventListener('click', ()=>{
+      clearGoal(cls, studentId, mode);
+      renderGoalSection();
+    });
+  }
+
+  overlay.querySelector('#btnCloseDetail').addEventListener('click', ()=>overlay.remove());
+  overlay.addEventListener('click', e=>{ if(e.target===overlay) overlay.remove(); });
+  overlay.querySelector('#btnResetComment').addEventListener('click', ()=>{
+    delete cls.customComments[commentKey];
+    saveState();
+    overlay.querySelector('#commentBox').value = generateAutoComment(cls, student, mode);
+  });
+  overlay.querySelector('#btnSaveComment').addEventListener('click', ()=>{
+    cls.customComments[commentKey] = overlay.querySelector('#commentBox').value;
+    saveState();
+    overlay.remove();
+    renderAll();
+  });
+}
+
+/* ===================== IN PHIẾU ĐIỂM ===================== */
+function printReportCard(cls, studentId){
+  const student = cls.students.find(s=>s.id===studentId);
+  if(!student) return;
+  const avg1 = getStudentSubjectAverages(cls, studentId, 'hk1');
+  const avg2 = getStudentSubjectAverages(cls, studentId, 'hk2');
+  const avgNam = getStudentSubjectAverages(cls, studentId, 'nam');
+  const overallNam = calcOverall(avgNam);
+  const labelNam = classify(overallNam, state.thresholds);
+  const comment = getComment(cls, student, 'nam');
+
+  let rows = cls.subjects.map(sub=>{
+    const tb1 = avg1[sub.id], tb2 = avg2[sub.id], tbNam = avgNam[sub.id];
+    const trend = (tb1!==null && tb1!==undefined && tb2!==null && tb2!==undefined) ? tb2-tb1 : null;
+    const subjComment = getSubjectComment(cls, studentId, sub.id, 'nam', tbNam, trend);
+    return `<tr><td style="text-align:left;padding:4px 8px;">${escapeHtml(sub.name)}</td>
+    <td style="text-align:center;">${tb1===null?'—':tb1.toFixed(1)}</td>
+    <td style="text-align:center;">${tb2===null?'—':tb2.toFixed(1)}</td>
+    <td style="text-align:center;"><strong>${tbNam===null?'—':tbNam.toFixed(1)}</strong></td>
+    <td style="text-align:left;padding:4px 8px;">${escapeHtml(subjComment)}</td></tr>`;
+  }).join('');
+
+  document.getElementById('print-area').innerHTML = `
+    <div style="font-family:Arial,sans-serif;padding:10px;">
+      <h2 style="text-align:center;margin-bottom:4px;">PHIẾU KẾT QUẢ HỌC TẬP</h2>
+      <p style="text-align:center;margin-top:0;color:#555;">Năm học ${new Date().getFullYear()-1}-${new Date().getFullYear()}</p>
+      <p><strong>Lớp:</strong> ${escapeHtml(cls.name)} &nbsp;&nbsp; <strong>Họ và tên:</strong> ${escapeHtml(student.name)}</p>
+      <table style="width:100%;border-collapse:collapse;" border="1">
+        <thead><tr style="background:#eee;"><th style="padding:4px 8px;">Môn học</th><th>HK I</th><th>HK II</th><th>Cả năm</th><th>Nhận xét</th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+      <p style="margin-top:14px;"><strong>Điểm trung bình cả năm:</strong> ${overallNam.dtb===null?'—':overallNam.dtb.toFixed(1)} &nbsp;&nbsp;
+      <strong>Xếp loại:</strong> ${CLASSIFY_LABEL[labelNam]}</p>
+      <p><strong>Nhận xét:</strong> ${escapeHtml(comment)}</p>
+      <div style="display:flex;justify-content:flex-end;margin-top:40px;text-align:center;">
+        <div>Giáo viên chủ nhiệm<br><br><br>(Ký, ghi rõ họ tên)</div>
+      </div>
+    </div>`;
+  window.print();
+}
+
+/* ===================== ĐỒNG BỘ GOOGLE SHEETS (APPS SCRIPT) ===================== */
+const APPS_SCRIPT_CODE = `function doGet(e) {
+  var action = e.parameter.action;
+  if (action === 'loadState') {
+    var sheet = getOrCreateSheet_('AppData');
+    var json = sheet.getRange('A1').getValue() || '{}';
+    return jsonOutput_(JSON.parse(json));
+  }
+  return jsonOutput_({ error: 'Unknown action' });
+}
+
+function doPost(e) {
+  var body = JSON.parse(e.postData.contents);
+  var action = body.action;
+
+  if (action === 'saveState') {
+    var sheet = getOrCreateSheet_('AppData');
+    sheet.getRange('A1').setValue(JSON.stringify(body.data));
+    sheet.getRange('B1').setValue(new Date());
+    return jsonOutput_({ ok: true, savedAt: new Date().toISOString() });
+  }
+
+  if (action === 'exportSummary') {
+    var sheetName = String(body.className || 'Lop').substring(0, 90).replace(/[\\[\\]\\*\\/\\\\?:]/g, '');
+    var ss = SpreadsheetApp.getActiveSpreadsheet();
+    var sheet = ss.getSheetByName(sheetName);
+    if (sheet) ss.deleteSheet(sheet);
+    sheet = ss.insertSheet(sheetName);
+    sheet.getRange(1, 1, 1, body.headers.length).setValues([body.headers]).setFontWeight('bold');
+    if (body.rows.length > 0) {
+      sheet.getRange(2, 1, body.rows.length, body.headers.length).setValues(body.rows);
+    }
+    sheet.autoResizeColumns(1, body.headers.length);
+    return jsonOutput_({ ok: true, sheet: sheetName });
+  }
+
+  return jsonOutput_({ ok: false, error: 'Unknown action' });
+}
+
+function jsonOutput_(obj) {
+  return ContentService.createTextOutput(JSON.stringify(obj)).setMimeType(ContentService.MimeType.JSON);
+}
+
+function getOrCreateSheet_(name) {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var sheet = ss.getSheetByName(name);
+  if (!sheet) sheet = ss.insertSheet(name);
+  return sheet;
+}`;
+
+function openAppsScriptGuide(){
+  const overlay = document.createElement('div');
+  overlay.className = 'modal-overlay';
+  overlay.innerHTML = `
+    <div class="modal" style="max-width:720px;">
+      <h3>📘 Hướng dẫn đồng bộ với Google Sheets</h3>
+      <ol style="padding-left:20px;font-size:13px;line-height:1.7;">
+        <li>Vào <strong>sheets.google.com</strong>, tạo một Google Sheet mới (đặt tên tuỳ ý, ví dụ "Dữ liệu điểm học sinh").</li>
+        <li>Vào menu <strong>Tiện ích mở rộng (Extensions) → Apps Script</strong>.</li>
+        <li>Xoá toàn bộ code mặc định, dán đoạn mã bên dưới vào.</li>
+        <li>Nhấn biểu tượng 💾 Lưu.</li>
+        <li>Nhấn <strong>Triển khai (Deploy) → Triển khai mới (New deployment)</strong>.</li>
+        <li>Chọn loại <strong>Ứng dụng web (Web app)</strong>.</li>
+        <li>Ở mục "Ai có quyền truy cập" chọn <strong>Bất kỳ ai (Anyone)</strong>.</li>
+        <li>Nhấn Deploy, cấp quyền truy cập khi được yêu cầu (Authorize access).</li>
+        <li>Sao chép <strong>URL Web app</strong> (dạng https://script.google.com/macros/s/.../exec).</li>
+        <li>Dán URL đó vào ô "URL Web App" trong mục Cài đặt của ứng dụng này rồi nhấn Lưu.</li>
+      </ol>
+      <div class="field">
+        <label>Mã Apps Script (dán vào Code.gs)</label>
+        <textarea id="appsScriptCodeBox" style="min-height:220px;font-family:monospace;font-size:12px;" readonly>${escapeHtml(APPS_SCRIPT_CODE)}</textarea>
+      </div>
+      <div class="modal-actions">
+        <button id="btnCloseGuide">Đóng</button>
+        <button class="primary" id="btnCopyScript">📋 Sao chép mã Apps Script</button>
+      </div>
+    </div>`;
+  document.body.appendChild(overlay);
+  overlay.addEventListener('click', e=>{ if(e.target===overlay) overlay.remove(); });
+  overlay.querySelector('#btnCloseGuide').addEventListener('click', ()=>overlay.remove());
+  overlay.querySelector('#btnCopyScript').addEventListener('click', ()=>{
+    copyTextToClipboard(APPS_SCRIPT_CODE, ok=>{
+      alert(ok ? 'Đã sao chép mã Apps Script.' : 'Không thể sao chép tự động, vui lòng bôi đen và sao chép thủ công.');
+    });
+  });
+}
+
+async function backupToSheet(){
+  const url = state.gsheetUrl;
+  if(!url) return alert('Vui lòng nhập URL Web App Apps Script trước khi sao lưu.');
+  try{
+    const res = await fetch(url, {
+      method:'POST',
+      headers: {'Content-Type':'text/plain;charset=utf-8'},
+      body: JSON.stringify({ action:'saveState', data: state })
+    });
+    const json = await res.json();
+    if(json.ok){
+      alert('Đã sao lưu toàn bộ dữ liệu lên Google Sheet lúc '+ new Date(json.savedAt).toLocaleString('vi-VN')+'.');
+    } else {
+      alert('Có lỗi khi sao lưu: '+(json.error||'không rõ nguyên nhân'));
+    }
+  }catch(err){
+    console.error(err);
+    alert('Không thể kết nối tới Google Apps Script. Kiểm tra lại URL Web App và quyền truy cập (phải chọn "Bất kỳ ai").');
+  }
+}
+
+async function restoreFromSheet(){
+  const url = state.gsheetUrl;
+  if(!url) return alert('Vui lòng nhập URL Web App Apps Script trước khi khôi phục.');
+  if(!confirm('Khôi phục sẽ GHI ĐÈ toàn bộ dữ liệu hiện tại trên máy này bằng dữ liệu đã lưu trên Google Sheet. Tiếp tục?')) return;
+  try{
+    const sep = url.includes('?') ? '&' : '?';
+    const res = await fetch(url+sep+'action=loadState');
+    const json = await res.json();
+    if(json && json.classes){
+      const savedUrl = state.gsheetUrl;
+      state = json;
+      if(!state.thresholds) state.thresholds = JSON.parse(JSON.stringify(DEFAULT_THRESHOLDS));
+      if(!state.thresholds.watch) state.thresholds.watch = JSON.parse(JSON.stringify(DEFAULT_THRESHOLDS.watch));
+      if(!state.gsheetUrl) state.gsheetUrl = savedUrl;
+      saveState();
+      alert('Đã khôi phục dữ liệu từ Google Sheet.');
+      renderAll();
+    } else {
+      alert('Chưa có dữ liệu sao lưu nào trên Google Sheet này. Hãy bấm "Sao lưu" trước.');
+    }
+  }catch(err){
+    console.error(err);
+    alert('Không thể kết nối tới Google Apps Script. Kiểm tra lại URL Web App và quyền truy cập.');
+  }
+}
+
+async function exportClassSummaryToSheet(cls){
+  const url = state.gsheetUrl;
+  if(!url) return alert('Vui lòng nhập URL Web App Apps Script trước khi xuất dữ liệu.');
+  const mode = summaryUI.mode || 'nam';
+  const headers = ['STT','Họ và tên', ...cls.subjects.map(s=>s.name), 'ĐTB','Xếp loại','Nhận xét'];
+  const rows = cls.students.map((s,idx)=>{
+    const subjAvgs = getStudentSubjectAverages(cls, s.id, mode);
+    const overall = calcOverall(subjAvgs);
+    const label = classify(overall, state.thresholds);
+    const row = [idx+1, s.name];
+    cls.subjects.forEach(sub=> row.push(subjAvgs[sub.id]===null?'':subjAvgs[sub.id]));
+    row.push(overall.dtb===null?'':overall.dtb);
+    row.push(CLASSIFY_LABEL[label]);
+    row.push(getComment(cls, s, mode));
+    return row;
+  });
+  try{
+    const res = await fetch(url, {
+      method:'POST',
+      headers: {'Content-Type':'text/plain;charset=utf-8'},
+      body: JSON.stringify({ action:'exportSummary', className: cls.name, headers, rows })
+    });
+    const json = await res.json();
+    if(json.ok){
+      alert('Đã xuất bảng tổng hợp lớp "'+cls.name+'" lên Google Sheet (tab "'+json.sheet+'").');
+    } else {
+      alert('Có lỗi khi xuất dữ liệu: '+(json.error||'không rõ nguyên nhân'));
+    }
+  }catch(err){
+    console.error(err);
+    alert('Không thể kết nối tới Google Apps Script. Kiểm tra lại URL Web App và quyền truy cập.');
+  }
+}
+
+/* ===================== SETTINGS MODAL ===================== */
+function openSettingsModal(){
+  const t = state.thresholds;
+  const overlay = document.createElement('div');
+  overlay.className = 'modal-overlay';
+  overlay.innerHTML = `
+    <div class="modal" style="max-width:720px;">
+      <h3>⚙️ Cài đặt xếp loại</h3>
+      <p class="muted">Ngưỡng phân loại tham khảo dựa trên tinh thần Thông tư 22/2021/TT-BGDĐT (điểm trung bình các môn ≥ ngưỡng và không môn nào thấp hơn mức tối thiểu). Có thể tuỳ chỉnh để phù hợp với quy định riêng của trường.</p>
+      <div class="grid2">
+        <div class="field"><label>Tốt — ĐTB tối thiểu</label><input type="number" id="th_tot_dtb" value="${t.tot.dtb}" step="0.1"></div>
+        <div class="field"><label>Tốt — Môn thấp nhất tối thiểu</label><input type="number" id="th_tot_min" value="${t.tot.minMon}" step="0.1"></div>
+        <div class="field"><label>Khá — ĐTB tối thiểu</label><input type="number" id="th_kha_dtb" value="${t.kha.dtb}" step="0.1"></div>
+        <div class="field"><label>Khá — Môn thấp nhất tối thiểu</label><input type="number" id="th_kha_min" value="${t.kha.minMon}" step="0.1"></div>
+        <div class="field"><label>Đạt — ĐTB tối thiểu</label><input type="number" id="th_dat_dtb" value="${t.dat.dtb}" step="0.1"></div>
+        <div class="field"><label>Đạt — Môn thấp nhất tối thiểu</label><input type="number" id="th_dat_min" value="${t.dat.minMon}" step="0.1"></div>
+      </div>
+      <hr style="margin:16px 0;border:none;border-top:1px solid var(--border);">
+      <h3 style="font-size:15px;">⚠️ Ngưỡng cảnh báo "Cần chú ý"</h3>
+      <p class="muted">Dùng để tự động lọc học sinh cần thông báo phụ huynh ở tab "Cần chú ý".</p>
+      <div class="grid2">
+        <div class="field"><label>Điểm môn được coi là rất yếu (dưới mức này)</label><input type="number" id="th_watch_weak" value="${t.watch.weakSubject}" step="0.1"></div>
+        <div class="field"><label>Mức giảm điểm bị coi là giảm sút (HK I → HK II)</label><input type="number" id="th_watch_drop" value="${t.watch.declineDrop}" step="0.1"></div>
+      </div>
+      <hr style="margin:16px 0;border:none;border-top:1px solid var(--border);">
+      <h3 style="font-size:15px;">🌟 Ngưỡng khen thưởng "Tiến bộ/Xuất sắc"</h3>
+      <p class="muted">Dùng để tự động phát hiện học sinh tiến bộ vượt bậc, có môn xuất sắc, hoặc cận kề lên hạng ở tab "Tiến bộ/Xuất sắc".</p>
+      <div class="grid2">
+        <div class="field"><label>Mức tăng điểm được coi là tiến bộ vượt bậc (HK I → HK II)</label><input type="number" id="th_prog_rise" value="${t.progress.riseImprove}" step="0.1"></div>
+        <div class="field"><label>Điểm môn được coi là xuất sắc (từ mức này)</label><input type="number" id="th_prog_excellent" value="${t.progress.excellentSubject}" step="0.1"></div>
+        <div class="field"><label>Khoảng cách ĐTB được coi là "cận kề lên hạng"</label><input type="number" id="th_prog_gap" value="${t.progress.nearPromoteGap}" step="0.1"></div>
+      </div>
+      <hr style="margin:16px 0;border:none;border-top:1px solid var(--border);">
+      <h3 style="font-size:15px;">📁 Kho đề thi (Google Drive)</h3>
+      <p class="muted">Lưu link thư mục Google Drive chứa đề thi để mở nhanh theo từng khối lớp. Nếu chưa có link riêng cho khối 10/11/12, để trống — nút tương ứng sẽ mở link chung. Vì đây là link Drive của bạn, việc phân loại/di chuyển file theo khối vẫn thực hiện trực tiếp trên Google Drive.</p>
+      <div class="field">
+        <label>Link thư mục chung (mặc định)</label>
+        <input type="text" id="examLinkChung" value="${escapeHtml(state.examLinks.chung||'')}" placeholder="https://drive.google.com/drive/folders/...">
+      </div>
+      <div class="grid2">
+        <div class="field"><label>Link riêng Lớp 10 (tuỳ chọn)</label><input type="text" id="examLinkLop10" value="${escapeHtml(state.examLinks.lop10||'')}" placeholder="Để trống nếu dùng link chung"></div>
+        <div class="field"><label>Link riêng Lớp 11 (tuỳ chọn)</label><input type="text" id="examLinkLop11" value="${escapeHtml(state.examLinks.lop11||'')}" placeholder="Để trống nếu dùng link chung"></div>
+        <div class="field"><label>Link riêng Lớp 12 (tuỳ chọn)</label><input type="text" id="examLinkLop12" value="${escapeHtml(state.examLinks.lop12||'')}" placeholder="Để trống nếu dùng link chung"></div>
+      </div>
+      <div class="row" style="margin-bottom:6px;">
+        <button id="btnOpenExamChung">📁 Mở kho đề thi chung</button>
+        <button id="btnOpenExam10">📂 Đề Lớp 10</button>
+        <button id="btnOpenExam11">📂 Đề Lớp 11</button>
+        <button id="btnOpenExam12">📂 Đề Lớp 12</button>
+      </div>
+      <hr style="margin:16px 0;border:none;border-top:1px solid var(--border);">
+      <h3 style="font-size:15px;">☁️ Đồng bộ Google Sheets (Apps Script)</h3>
+      <p class="muted">Sao lưu/khôi phục toàn bộ dữ liệu hoặc xuất bảng tổng hợp lớp lên Google Sheet thông qua một Apps Script Web App do bạn tự triển khai (miễn phí). Nhấn "Xem hướng dẫn" để lấy mã cài đặt.</p>
+      <div class="field">
+        <label>URL Web App Apps Script</label>
+        <input type="text" id="gsheetUrlInput" value="${escapeHtml(state.gsheetUrl||'')}" placeholder="https://script.google.com/macros/s/xxxxx/exec">
+      </div>
+      <div class="row" style="margin-bottom:6px;">
+        <button id="btnAppsScriptGuide">📘 Xem hướng dẫn & lấy mã Apps Script</button>
+        <button id="btnBackupSheet">💾 Sao lưu toàn bộ dữ liệu lên Sheet</button>
+        <button id="btnRestoreSheet">☁️ Khôi phục dữ liệu từ Sheet</button>
+        <button id="btnExportSheet">📊 Xuất bảng lớp hiện tại lên Sheet</button>
+      </div>
+      <hr style="margin:16px 0;border:none;border-top:1px solid var(--border);">
+      <div class="row between">
+        <button class="danger" id="btnResetAllData">🗑️ Xoá toàn bộ dữ liệu</button>
+        <div class="row">
+          <button id="btnCloseSettings">Đóng</button>
+          <button class="primary" id="btnSaveSettings">Lưu</button>
+        </div>
+      </div>
+    </div>`;
+  document.body.appendChild(overlay);
+  overlay.addEventListener('click', e=>{ if(e.target===overlay) overlay.remove(); });
+  overlay.querySelector('#btnCloseSettings').addEventListener('click', ()=>overlay.remove());
+  overlay.querySelector('#btnSaveSettings').addEventListener('click', ()=>{
+    state.thresholds = {
+      tot:{ dtb:Number(overlay.querySelector('#th_tot_dtb').value), minMon:Number(overlay.querySelector('#th_tot_min').value) },
+      kha:{ dtb:Number(overlay.querySelector('#th_kha_dtb').value), minMon:Number(overlay.querySelector('#th_kha_min').value) },
+      dat:{ dtb:Number(overlay.querySelector('#th_dat_dtb').value), minMon:Number(overlay.querySelector('#th_dat_min').value) },
+      watch:{ weakSubject:Number(overlay.querySelector('#th_watch_weak').value), declineDrop:Number(overlay.querySelector('#th_watch_drop').value) },
+      progress:{ riseImprove:Number(overlay.querySelector('#th_prog_rise').value), excellentSubject:Number(overlay.querySelector('#th_prog_excellent').value), nearPromoteGap:Number(overlay.querySelector('#th_prog_gap').value) }
+    };
+    state.gsheetUrl = overlay.querySelector('#gsheetUrlInput').value.trim();
+    state.examLinks = {
+      chung: overlay.querySelector('#examLinkChung').value.trim(),
+      lop10: overlay.querySelector('#examLinkLop10').value.trim(),
+      lop11: overlay.querySelector('#examLinkLop11').value.trim(),
+      lop12: overlay.querySelector('#examLinkLop12').value.trim()
+    };
+    saveState();
+    overlay.remove();
+    renderAll();
+  });
+  function openExamLink(specificKey){
+    const specific = overlay.querySelector('#examLink'+specificKey).value.trim();
+    const url = specific || overlay.querySelector('#examLinkChung').value.trim();
+    if(!url) return alert('Chưa có link kho đề thi. Vui lòng nhập link Google Drive trước.');
+    window.open(url, '_blank');
+  }
+  overlay.querySelector('#btnOpenExamChung').addEventListener('click', ()=>{
+    const url = overlay.querySelector('#examLinkChung').value.trim();
+    if(!url) return alert('Chưa có link kho đề thi chung.');
+    window.open(url, '_blank');
+  });
+  overlay.querySelector('#btnOpenExam10').addEventListener('click', ()=>openExamLink('Lop10'));
+  overlay.querySelector('#btnOpenExam11').addEventListener('click', ()=>openExamLink('Lop11'));
+  overlay.querySelector('#btnOpenExam12').addEventListener('click', ()=>openExamLink('Lop12'));
+  overlay.querySelector('#btnAppsScriptGuide').addEventListener('click', ()=>openAppsScriptGuide());
+  overlay.querySelector('#btnBackupSheet').addEventListener('click', ()=>{
+    state.gsheetUrl = overlay.querySelector('#gsheetUrlInput').value.trim();
+    saveState();
+    backupToSheet();
+  });
+  overlay.querySelector('#btnRestoreSheet').addEventListener('click', async ()=>{
+    state.gsheetUrl = overlay.querySelector('#gsheetUrlInput').value.trim();
+    saveState();
+    await restoreFromSheet();
+    overlay.remove();
+  });
+  overlay.querySelector('#btnExportSheet').addEventListener('click', ()=>{
+    state.gsheetUrl = overlay.querySelector('#gsheetUrlInput').value.trim();
+    saveState();
+    const cls = getCurrentClass();
+    if(!cls) return alert('Chưa chọn lớp nào.');
+    exportClassSummaryToSheet(cls);
+  });
+  overlay.querySelector('#btnResetAllData').addEventListener('click', ()=>{
+    if(confirm('Xoá TOÀN BỘ dữ liệu (tất cả lớp, học sinh, điểm)? Hành động này không thể hoàn tác.')){
+      localStorage.removeItem(STORAGE_KEY);
+      state = { classes: [], currentClassId: null, thresholds: JSON.parse(JSON.stringify(DEFAULT_THRESHOLDS)), gsheetUrl: '', examLinks: JSON.parse(JSON.stringify(DEFAULT_EXAM_LINKS)) };
+      overlay.remove();
+      renderAll();
+    }
+  });
+}
+
+/* ===================== GENERIC MODAL (form) ===================== */
+function openModal({title, fields, onSubmit}){
+  const overlay = document.createElement('div');
+  overlay.className = 'modal-overlay';
+  const fieldsHtml = fields.map(f=>{
+    if(f.type==='select'){
+      const opts = f.options.map(o=>`<option value="${escapeHtml(o)}" ${o===f.value?'selected':''}>${o===''?'—':escapeHtml(o)}</option>`).join('');
+      return `<div class="field"><label>${escapeHtml(f.label)}</label><select data-field="${f.name}">${opts}</select></div>`;
+    }
+    return `<div class="field"><label>${escapeHtml(f.label)}</label><input type="${f.type}" data-field="${f.name}" value="${escapeHtml(f.value||'')}" placeholder="${escapeHtml(f.placeholder||'')}"></div>`;
+  }).join('');
+
+  overlay.innerHTML = `
+    <div class="modal">
+      <h3>${escapeHtml(title)}</h3>
+      <form id="genericForm">${fieldsHtml}
+        <div class="modal-actions">
+          <button type="button" id="btnCancelModal">Huỷ</button>
+          <button type="submit" class="primary">Lưu</button>
+        </div>
+      </form>
+    </div>`;
+  document.body.appendChild(overlay);
+  overlay.addEventListener('click', e=>{ if(e.target===overlay) overlay.remove(); });
+  overlay.querySelector('#btnCancelModal').addEventListener('click', ()=>overlay.remove());
+  overlay.querySelector('#genericForm').addEventListener('submit', e=>{
+    e.preventDefault();
+    const values = {};
+    fields.forEach(f=>{ values[f.name] = overlay.querySelector(`[data-field="${f.name}"]`).value; });
+    onSubmit(values);
+    overlay.remove();
+  });
+  const firstInput = overlay.querySelector('input,select');
+  if(firstInput) firstInput.focus();
+}
+
+/* ===================== UTILS ===================== */
+function escapeHtml(str){
+  return String(str ?? '').replace(/[&<>"']/g, m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+}
+
+/* ===================== INIT ===================== */
+if(state.classes.length>0 && !state.currentClassId){
+  state.currentClassId = state.classes[0].id;
+}
+renderAll();
+</script>
+</body>
+</html>
